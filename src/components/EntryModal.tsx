@@ -47,6 +47,9 @@ const INCOME_TYPES: IncomeSourceType[] = [
   'other',
 ];
 
+const INPUT_CLASS =
+  'w-full min-h-[42px] px-3.5 py-2 text-sm bg-white dark:bg-[#0B1825] border border-[#C6DFF4] dark:border-[#1E3750] rounded-lg text-[#0F2537] dark:text-[#EDF6FF] placeholder:text-[#7E9BB5] dark:placeholder:text-[#5E7E9B] focus:border-[#0284C7] dark:focus:border-[#38BDF8] focus:outline-none';
+
 export function EntryModal({
   modal,
   categories,
@@ -55,7 +58,6 @@ export function EntryModal({
   onSaveIncome,
   onSaveGoal,
 }: EntryModalProps) {
-  // Expense form state
   const [expTitle, setExpTitle] = useState('');
   const [expCategoryId, setExpCategoryId] = useState(categories[0]?.id ?? 'utilities');
   const [expAmount, setExpAmount] = useState('');
@@ -63,7 +65,6 @@ export function EntryModal({
   const [expDate, setExpDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [expNote, setExpNote] = useState('');
 
-  // Income form state
   const [incTitle, setIncTitle] = useState('');
   const [incSourceType, setIncSourceType] = useState<IncomeSourceType>('part-time-job');
   const [incAmount, setIncAmount] = useState('');
@@ -71,7 +72,6 @@ export function EntryModal({
   const [incActive, setIncActive] = useState(true);
   const [incNote, setIncNote] = useState('');
 
-  // Goal form state
   const [goalName, setGoalName] = useState('');
   const [goalTarget, setGoalTarget] = useState('');
   const [goalSaved, setGoalSaved] = useState('0');
@@ -233,7 +233,7 @@ export function EntryModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F2537]/40 backdrop-blur-[2px] p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F2537]/45 dark:bg-black/65 backdrop-blur-[2px] p-3 sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="entry-modal-title"
@@ -241,381 +241,444 @@ export function EntryModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-lg bg-white border border-[#CBE2F5] rounded-xl shadow-xl overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 bg-[#F2F8FD] border-b border-[#D4E7F7]">
-          <h2 id="entry-modal-title" className="text-base font-semibold text-[#0F2537]">
+      <div className="w-full max-w-lg landscape:max-w-2xl max-h-[92dvh] bg-white dark:bg-[#112233] border border-[#CBE2F5] dark:border-[#1E3750] rounded-xl shadow-xl overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between px-5 sm:px-6 py-3.5 bg-[#F2F8FD] dark:bg-[#0D1C2B] border-b border-[#D4E7F7] dark:border-[#1E3750] shrink-0">
+          <h2 id="entry-modal-title" className="text-base font-semibold text-[#0F2537] dark:text-[#EDF6FF]">
             {titleText}
           </h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close modal"
-            className="p-1.5 text-[#4B6780] hover:text-[#0F2537] hover:bg-[#E1F0FC] rounded-lg transition-colors cursor-pointer"
+            className="min-h-[36px] min-w-[36px] flex items-center justify-center text-[#4B6780] dark:text-[#93B4CF] hover:text-[#0F2537] dark:hover:text-white hover:bg-[#E1F0FC] dark:hover:bg-[#163049] rounded-lg transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {error && (
-            <div
-              role="alert"
-              className="px-3.5 py-2.5 text-sm text-[#9F1239] bg-[#FFF1F2] border border-[#FECDD3] rounded-lg"
-            >
-              {error}
-            </div>
-          )}
-
-          {modal.type === 'expense' && (
-            <>
-              <div>
-                <label htmlFor="exp-title" className="block text-sm font-medium text-[#0F2537] mb-1.5">
-                  Expense Name
-                </label>
-                <input
-                  id="exp-title"
-                  type="text"
-                  autoFocus
-                  placeholder="e.g., Weekly Groceries, Fiber Wi-Fi, Calculus Textbook"
-                  value={expTitle}
-                  onChange={(e) => setExpTitle(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-sm bg-white border border-[#C6DFF4] rounded-lg text-[#0F2537] placeholder:text-[#7E9BB5] focus:border-[#0284C7] focus:outline-none"
-                />
+        <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1">
+          <div className="overflow-y-auto p-5 sm:p-6 space-y-4">
+            {error && (
+              <div
+                role="alert"
+                className="px-3.5 py-2.5 text-sm text-[#9F1239] dark:text-[#FDA4AF] bg-[#FFF1F2] dark:bg-[#3B1020] border border-[#FECDD3] dark:border-[#881337] rounded-lg"
+              >
+                {error}
               </div>
+            )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {modal.type === 'expense' && (
+              <>
                 <div>
-                  <label htmlFor="exp-category" className="block text-sm font-medium text-[#0F2537] mb-1.5">
-                    Category
-                  </label>
-                  <select
-                    id="exp-category"
-                    value={expCategoryId}
-                    onChange={(e) => setExpCategoryId(e.target.value)}
-                    className="w-full px-3.5 py-2.5 text-sm bg-white border border-[#C6DFF4] rounded-lg text-[#0F2537] focus:border-[#0284C7] focus:outline-none"
+                  <label
+                    htmlFor="exp-title"
+                    className="block text-sm font-medium text-[#0F2537] dark:text-[#EDF6FF] mb-1.5"
                   >
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label htmlFor="exp-date" className="block text-sm font-medium text-[#0F2537] mb-1.5">
-                    Date
+                    Expense Name
                   </label>
                   <input
-                    id="exp-date"
-                    type="date"
-                    value={expDate}
-                    onChange={(e) => setExpDate(e.target.value)}
-                    className="w-full px-3.5 py-2.5 text-sm bg-white border border-[#C6DFF4] rounded-lg text-[#0F2537] focus:border-[#0284C7] focus:outline-none font-mono"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="exp-amount" className="block text-sm font-medium text-[#0F2537] mb-1.5">
-                    Amount (USD)
-                  </label>
-                  <input
-                    id="exp-amount"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0.00"
-                    value={expAmount}
-                    onChange={(e) => setExpAmount(e.target.value)}
-                    className="w-full px-3.5 py-2.5 text-sm bg-white border border-[#C6DFF4] rounded-lg text-[#0F2537] font-mono tabular-nums focus:border-[#0284C7] focus:outline-none"
+                    id="exp-title"
+                    type="text"
+                    autoFocus
+                    placeholder="e.g., Weekly Groceries, Fiber Wi-Fi, Calculus Textbook"
+                    value={expTitle}
+                    onChange={(e) => setExpTitle(e.target.value)}
+                    className={INPUT_CLASS}
                   />
                 </div>
 
-                <div>
-                  <label htmlFor="exp-frequency" className="block text-sm font-medium text-[#0F2537] mb-1.5">
-                    Frequency
-                  </label>
-                  <select
-                    id="exp-frequency"
-                    value={expFrequency}
-                    onChange={(e) => setExpFrequency(e.target.value as Frequency)}
-                    className="w-full px-3.5 py-2.5 text-sm bg-white border border-[#C6DFF4] rounded-lg text-[#0F2537] focus:border-[#0284C7] focus:outline-none"
-                  >
-                    {FREQUENCIES.map((freq) => (
-                      <option key={freq} value={freq}>
-                        {FREQUENCY_META[freq].label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 landscape:grid-cols-2 gap-3.5">
+                  <div>
+                    <label
+                      htmlFor="exp-category"
+                      className="block text-sm font-medium text-[#0F2537] dark:text-[#EDF6FF] mb-1.5"
+                    >
+                      Category
+                    </label>
+                    <select
+                      id="exp-category"
+                      value={expCategoryId}
+                      onChange={(e) => setExpCategoryId(e.target.value)}
+                      className={INPUT_CLASS}
+                    >
+                      {categories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-              <div className="px-4 py-3 bg-[#F2F8FD] border border-[#D4E7F7] rounded-lg flex items-center justify-between text-sm">
-                <span className="text-[#4B6780]">
-                  Monthly budget impact ({FREQUENCY_META[expFrequency].formulaHint})
-                </span>
-                <span className="font-mono tabular-nums font-semibold text-[#0C4A6E]">
-                  {formatCurrency(monthlyExpensePreview)}/mo
-                </span>
-              </div>
-
-              <div>
-                <label htmlFor="exp-note" className="block text-sm font-medium text-[#0F2537] mb-1.5">
-                  Note (optional)
-                </label>
-                <input
-                  id="exp-note"
-                  type="text"
-                  placeholder="Roommate split, semester book rental, etc."
-                  value={expNote}
-                  onChange={(e) => setExpNote(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-sm bg-white border border-[#C6DFF4] rounded-lg text-[#0F2537] placeholder:text-[#7E9BB5] focus:border-[#0284C7] focus:outline-none"
-                />
-              </div>
-            </>
-          )}
-
-          {modal.type === 'income' && (
-            <>
-              <div>
-                <label htmlFor="inc-title" className="block text-sm font-medium text-[#0F2537] mb-1.5">
-                  Income Source Name
-                </label>
-                <input
-                  id="inc-title"
-                  type="text"
-                  autoFocus
-                  placeholder="e.g., Campus Coffee Barista, Parents Monthly Support"
-                  value={incTitle}
-                  onChange={(e) => setIncTitle(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-sm bg-white border border-[#C6DFF4] rounded-lg text-[#0F2537] placeholder:text-[#7E9BB5] focus:border-[#0284C7] focus:outline-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="inc-type" className="block text-sm font-medium text-[#0F2537] mb-1.5">
-                    Source Type
-                  </label>
-                  <select
-                    id="inc-type"
-                    value={incSourceType}
-                    onChange={(e) => setIncSourceType(e.target.value as IncomeSourceType)}
-                    className="w-full px-3.5 py-2.5 text-sm bg-white border border-[#C6DFF4] rounded-lg text-[#0F2537] focus:border-[#0284C7] focus:outline-none"
-                  >
-                    {INCOME_TYPES.map((t) => (
-                      <option key={t} value={t}>
-                        {INCOME_SOURCE_LABELS[t]}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label htmlFor="inc-frequency" className="block text-sm font-medium text-[#0F2537] mb-1.5">
-                    Pay Frequency
-                  </label>
-                  <select
-                    id="inc-frequency"
-                    value={incFrequency}
-                    onChange={(e) => setIncFrequency(e.target.value as Frequency)}
-                    className="w-full px-3.5 py-2.5 text-sm bg-white border border-[#C6DFF4] rounded-lg text-[#0F2537] focus:border-[#0284C7] focus:outline-none"
-                  >
-                    {FREQUENCIES.map((freq) => (
-                      <option key={freq} value={freq}>
-                        {FREQUENCY_META[freq].label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="inc-amount" className="block text-sm font-medium text-[#0F2537] mb-1.5">
-                  Amount per Period (USD)
-                </label>
-                <input
-                  id="inc-amount"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="0.00"
-                  value={incAmount}
-                  onChange={(e) => setIncAmount(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-sm bg-white border border-[#C6DFF4] rounded-lg text-[#0F2537] font-mono tabular-nums focus:border-[#0284C7] focus:outline-none"
-                />
-              </div>
-
-              <div className="px-4 py-3 bg-[#F2F8FD] border border-[#D4E7F7] rounded-lg flex flex-wrap items-center justify-between gap-2 text-sm">
-                <span className="text-[#4B6780]">
-                  Normalized monthly ({FREQUENCY_META[incFrequency].formulaHint})
-                </span>
-                <span className="font-mono tabular-nums font-semibold text-[#0C4A6E]">
-                  {formatCurrency(monthlyIncomePreview)}/mo
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between gap-4 pt-1">
-                <label htmlFor="inc-active" className="text-sm text-[#0F2537] cursor-pointer">
-                  Include in active monthly budget
-                </label>
-                <input
-                  id="inc-active"
-                  type="checkbox"
-                  checked={incActive}
-                  onChange={(e) => setIncActive(e.target.checked)}
-                  className="w-4 h-4 accent-[#0284C7] rounded cursor-pointer"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="inc-note" className="block text-sm font-medium text-[#0F2537] mb-1.5">
-                  Note (optional)
-                </label>
-                <input
-                  id="inc-note"
-                  type="text"
-                  placeholder="Hours per week, payday schedule, or stipend details"
-                  value={incNote}
-                  onChange={(e) => setIncNote(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-sm bg-white border border-[#C6DFF4] rounded-lg text-[#0F2537] placeholder:text-[#7E9BB5] focus:border-[#0284C7] focus:outline-none"
-                />
-              </div>
-            </>
-          )}
-
-          {modal.type === 'goal' && (
-            <>
-              <div>
-                <label htmlFor="goal-name" className="block text-sm font-medium text-[#0F2537] mb-1.5">
-                  Goal Name
-                </label>
-                <input
-                  id="goal-name"
-                  type="text"
-                  autoFocus
-                  placeholder="e.g., New Laptop, Summer Vacation, Study Abroad"
-                  value={goalName}
-                  onChange={(e) => setGoalName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-sm bg-white border border-[#C6DFF4] rounded-lg text-[#0F2537] placeholder:text-[#7E9BB5] focus:border-[#0284C7] focus:outline-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="goal-target" className="block text-sm font-medium text-[#0F2537] mb-1.5">
-                    Target Amount (USD)
-                  </label>
-                  <input
-                    id="goal-target"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="1200.00"
-                    value={goalTarget}
-                    onChange={(e) => setGoalTarget(e.target.value)}
-                    className="w-full px-3.5 py-2.5 text-sm bg-white border border-[#C6DFF4] rounded-lg text-[#0F2537] font-mono tabular-nums focus:border-[#0284C7] focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="goal-saved" className="block text-sm font-medium text-[#0F2537] mb-1.5">
-                    Already Saved (USD)
-                  </label>
-                  <input
-                    id="goal-saved"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0.00"
-                    value={goalSaved}
-                    onChange={(e) => setGoalSaved(e.target.value)}
-                    className="w-full px-3.5 py-2.5 text-sm bg-white border border-[#C6DFF4] rounded-lg text-[#0F2537] font-mono tabular-nums focus:border-[#0284C7] focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="goal-monthly" className="block text-sm font-medium text-[#0F2537] mb-1.5">
-                    Monthly Contribution (USD)
-                  </label>
-                  <input
-                    id="goal-monthly"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="100.00"
-                    value={goalMonthly}
-                    onChange={(e) => setGoalMonthly(e.target.value)}
-                    className="w-full px-3.5 py-2.5 text-sm bg-white border border-[#C6DFF4] rounded-lg text-[#0F2537] font-mono tabular-nums focus:border-[#0284C7] focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="goal-date" className="block text-sm font-medium text-[#0F2537] mb-1.5">
-                    Target Date (optional)
-                  </label>
-                  <input
-                    id="goal-date"
-                    type="date"
-                    value={goalDate}
-                    onChange={(e) => setGoalDate(e.target.value)}
-                    className="w-full px-3.5 py-2.5 text-sm bg-white border border-[#C6DFF4] rounded-lg text-[#0F2537] font-mono focus:border-[#0284C7] focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <span className="block text-sm font-medium text-[#0F2537] mb-2">Accent Color</span>
-                <div className="flex flex-wrap items-center gap-2.5">
-                  {CATEGORY_COLOR_SWATCHES.map((swatch) => (
-                    <button
-                      key={swatch.hex}
-                      type="button"
-                      onClick={() => setGoalColor(swatch.hex)}
-                      aria-label={swatch.name}
-                      aria-pressed={goalColor === swatch.hex}
-                      className={`w-7 h-7 rounded-lg transition-transform cursor-pointer ${
-                        goalColor === swatch.hex
-                          ? 'ring-2 ring-offset-2 ring-[#0284C7] scale-105'
-                          : 'hover:scale-105'
-                      }`}
-                      style={{ backgroundColor: swatch.hex }}
+                  <div>
+                    <label
+                      htmlFor="exp-date"
+                      className="block text-sm font-medium text-[#0F2537] dark:text-[#EDF6FF] mb-1.5"
+                    >
+                      Date
+                    </label>
+                    <input
+                      id="exp-date"
+                      type="date"
+                      value={expDate}
+                      onChange={(e) => setExpDate(e.target.value)}
+                      className={`${INPUT_CLASS} font-mono`}
                     />
-                  ))}
+                  </div>
                 </div>
-              </div>
 
-              <div>
-                <label htmlFor="goal-note" className="block text-sm font-medium text-[#0F2537] mb-1.5">
-                  Note (optional)
-                </label>
-                <input
-                  id="goal-note"
-                  type="text"
-                  placeholder="Model specs, trip destination, or milestone note"
-                  value={goalNote}
-                  onChange={(e) => setGoalNote(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-sm bg-white border border-[#C6DFF4] rounded-lg text-[#0F2537] placeholder:text-[#7E9BB5] focus:border-[#0284C7] focus:outline-none"
-                />
-              </div>
-            </>
-          )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 landscape:grid-cols-2 gap-3.5">
+                  <div>
+                    <label
+                      htmlFor="exp-amount"
+                      className="block text-sm font-medium text-[#0F2537] dark:text-[#EDF6FF] mb-1.5"
+                    >
+                      Amount (USD)
+                    </label>
+                    <input
+                      id="exp-amount"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      inputMode="decimal"
+                      placeholder="0.00"
+                      value={expAmount}
+                      onChange={(e) => setExpAmount(e.target.value)}
+                      className={`${INPUT_CLASS} font-mono tabular-nums`}
+                    />
+                  </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#E6F1FA]">
+                  <div>
+                    <label
+                      htmlFor="exp-frequency"
+                      className="block text-sm font-medium text-[#0F2537] dark:text-[#EDF6FF] mb-1.5"
+                    >
+                      Frequency
+                    </label>
+                    <select
+                      id="exp-frequency"
+                      value={expFrequency}
+                      onChange={(e) => setExpFrequency(e.target.value as Frequency)}
+                      className={INPUT_CLASS}
+                    >
+                      {FREQUENCIES.map((freq) => (
+                        <option key={freq} value={freq}>
+                          {FREQUENCY_META[freq].label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="px-4 py-3 bg-[#F2F8FD] dark:bg-[#0D1C2B] border border-[#D4E7F7] dark:border-[#1E3750] rounded-lg flex items-center justify-between text-sm">
+                  <span className="text-[#4B6780] dark:text-[#93B4CF]">
+                    Monthly impact ({FREQUENCY_META[expFrequency].formulaHint})
+                  </span>
+                  <span className="font-mono tabular-nums font-semibold text-[#0C4A6E] dark:text-[#38BDF8]">
+                    {formatCurrency(monthlyExpensePreview)}/mo
+                  </span>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="exp-note"
+                    className="block text-sm font-medium text-[#0F2537] dark:text-[#EDF6FF] mb-1.5"
+                  >
+                    Note (optional)
+                  </label>
+                  <input
+                    id="exp-note"
+                    type="text"
+                    placeholder="Roommate split, semester book rental, etc."
+                    value={expNote}
+                    onChange={(e) => setExpNote(e.target.value)}
+                    className={INPUT_CLASS}
+                  />
+                </div>
+              </>
+            )}
+
+            {modal.type === 'income' && (
+              <>
+                <div>
+                  <label
+                    htmlFor="inc-title"
+                    className="block text-sm font-medium text-[#0F2537] dark:text-[#EDF6FF] mb-1.5"
+                  >
+                    Income Source Name
+                  </label>
+                  <input
+                    id="inc-title"
+                    type="text"
+                    autoFocus
+                    placeholder="e.g., Campus Coffee Barista, Parents Monthly Support"
+                    value={incTitle}
+                    onChange={(e) => setIncTitle(e.target.value)}
+                    className={INPUT_CLASS}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 landscape:grid-cols-2 gap-3.5">
+                  <div>
+                    <label
+                      htmlFor="inc-type"
+                      className="block text-sm font-medium text-[#0F2537] dark:text-[#EDF6FF] mb-1.5"
+                    >
+                      Source Type
+                    </label>
+                    <select
+                      id="inc-type"
+                      value={incSourceType}
+                      onChange={(e) => setIncSourceType(e.target.value as IncomeSourceType)}
+                      className={INPUT_CLASS}
+                    >
+                      {INCOME_TYPES.map((t) => (
+                        <option key={t} value={t}>
+                          {INCOME_SOURCE_LABELS[t]}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="inc-frequency"
+                      className="block text-sm font-medium text-[#0F2537] dark:text-[#EDF6FF] mb-1.5"
+                    >
+                      Pay Frequency
+                    </label>
+                    <select
+                      id="inc-frequency"
+                      value={incFrequency}
+                      onChange={(e) => setIncFrequency(e.target.value as Frequency)}
+                      className={INPUT_CLASS}
+                    >
+                      {FREQUENCIES.map((freq) => (
+                        <option key={freq} value={freq}>
+                          {FREQUENCY_META[freq].label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 landscape:grid-cols-2 gap-3.5 items-end">
+                  <div>
+                    <label
+                      htmlFor="inc-amount"
+                      className="block text-sm font-medium text-[#0F2537] dark:text-[#EDF6FF] mb-1.5"
+                    >
+                      Amount per Period (USD)
+                    </label>
+                    <input
+                      id="inc-amount"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      inputMode="decimal"
+                      placeholder="0.00"
+                      value={incAmount}
+                      onChange={(e) => setIncAmount(e.target.value)}
+                      className={`${INPUT_CLASS} font-mono tabular-nums`}
+                    />
+                  </div>
+
+                  <div className="px-4 py-2.5 min-h-[42px] bg-[#F2F8FD] dark:bg-[#0D1C2B] border border-[#D4E7F7] dark:border-[#1E3750] rounded-lg flex items-center justify-between gap-2 text-sm">
+                    <span className="text-xs text-[#4B6780] dark:text-[#93B4CF]">Monthly</span>
+                    <span className="font-mono tabular-nums font-semibold text-[#0C4A6E] dark:text-[#38BDF8]">
+                      {formatCurrency(monthlyIncomePreview)}/mo
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between gap-4 pt-1">
+                  <label
+                    htmlFor="inc-active"
+                    className="text-sm text-[#0F2537] dark:text-[#EDF6FF] cursor-pointer"
+                  >
+                    Include in active monthly budget
+                  </label>
+                  <input
+                    id="inc-active"
+                    type="checkbox"
+                    checked={incActive}
+                    onChange={(e) => setIncActive(e.target.checked)}
+                    className="w-5 h-5 accent-[#0284C7] rounded cursor-pointer"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="inc-note"
+                    className="block text-sm font-medium text-[#0F2537] dark:text-[#EDF6FF] mb-1.5"
+                  >
+                    Note (optional)
+                  </label>
+                  <input
+                    id="inc-note"
+                    type="text"
+                    placeholder="Hours per week, payday schedule, or stipend details"
+                    value={incNote}
+                    onChange={(e) => setIncNote(e.target.value)}
+                    className={INPUT_CLASS}
+                  />
+                </div>
+              </>
+            )}
+
+            {modal.type === 'goal' && (
+              <>
+                <div>
+                  <label
+                    htmlFor="goal-name"
+                    className="block text-sm font-medium text-[#0F2537] dark:text-[#EDF6FF] mb-1.5"
+                  >
+                    Goal Name
+                  </label>
+                  <input
+                    id="goal-name"
+                    type="text"
+                    autoFocus
+                    placeholder="e.g., New Laptop, Summer Vacation, Study Abroad"
+                    value={goalName}
+                    onChange={(e) => setGoalName(e.target.value)}
+                    className={INPUT_CLASS}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 landscape:grid-cols-2 gap-3.5">
+                  <div>
+                    <label
+                      htmlFor="goal-target"
+                      className="block text-sm font-medium text-[#0F2537] dark:text-[#EDF6FF] mb-1.5"
+                    >
+                      Target Amount (USD)
+                    </label>
+                    <input
+                      id="goal-target"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      inputMode="decimal"
+                      placeholder="1200.00"
+                      value={goalTarget}
+                      onChange={(e) => setGoalTarget(e.target.value)}
+                      className={`${INPUT_CLASS} font-mono tabular-nums`}
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="goal-saved"
+                      className="block text-sm font-medium text-[#0F2537] dark:text-[#EDF6FF] mb-1.5"
+                    >
+                      Already Saved (USD)
+                    </label>
+                    <input
+                      id="goal-saved"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      inputMode="decimal"
+                      placeholder="0.00"
+                      value={goalSaved}
+                      onChange={(e) => setGoalSaved(e.target.value)}
+                      className={`${INPUT_CLASS} font-mono tabular-nums`}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 landscape:grid-cols-2 gap-3.5">
+                  <div>
+                    <label
+                      htmlFor="goal-monthly"
+                      className="block text-sm font-medium text-[#0F2537] dark:text-[#EDF6FF] mb-1.5"
+                    >
+                      Monthly Contribution (USD)
+                    </label>
+                    <input
+                      id="goal-monthly"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      inputMode="decimal"
+                      placeholder="100.00"
+                      value={goalMonthly}
+                      onChange={(e) => setGoalMonthly(e.target.value)}
+                      className={`${INPUT_CLASS} font-mono tabular-nums`}
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="goal-date"
+                      className="block text-sm font-medium text-[#0F2537] dark:text-[#EDF6FF] mb-1.5"
+                    >
+                      Target Date (optional)
+                    </label>
+                    <input
+                      id="goal-date"
+                      type="date"
+                      value={goalDate}
+                      onChange={(e) => setGoalDate(e.target.value)}
+                      className={`${INPUT_CLASS} font-mono`}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <span className="block text-sm font-medium text-[#0F2537] dark:text-[#EDF6FF] mb-2">
+                    Accent Color
+                  </span>
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    {CATEGORY_COLOR_SWATCHES.map((swatch) => (
+                      <button
+                        key={swatch.hex}
+                        type="button"
+                        onClick={() => setGoalColor(swatch.hex)}
+                        aria-label={swatch.name}
+                        aria-pressed={goalColor === swatch.hex}
+                        className={`w-8 h-8 rounded-lg transition-transform cursor-pointer ${
+                          goalColor === swatch.hex
+                            ? 'ring-2 ring-offset-2 ring-[#0284C7] dark:ring-[#38BDF8] dark:ring-offset-[#112233] scale-105'
+                            : 'hover:scale-105'
+                        }`}
+                        style={{ backgroundColor: swatch.hex }}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="goal-note"
+                    className="block text-sm font-medium text-[#0F2537] dark:text-[#EDF6FF] mb-1.5"
+                  >
+                    Note (optional)
+                  </label>
+                  <input
+                    id="goal-note"
+                    type="text"
+                    placeholder="Model specs, trip destination, or milestone note"
+                    value={goalNote}
+                    onChange={(e) => setGoalNote(e.target.value)}
+                    className={INPUT_CLASS}
+                  />
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="flex items-center justify-end gap-3 px-5 sm:px-6 py-3.5 bg-[#FAFDFE] dark:bg-[#0D1C2B] border-t border-[#E6F1FA] dark:border-[#1E3750] shrink-0">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-[#4B6780] hover:text-[#0F2537] hover:bg-[#EBF5FD] rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              className="min-h-[42px] px-4 py-2 text-sm font-medium text-[#4B6780] dark:text-[#93B4CF] hover:text-[#0F2537] dark:hover:text-white hover:bg-[#EBF5FD] dark:hover:bg-[#163049] rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2 text-sm font-medium text-white bg-[#0284C7] hover:bg-[#0369A1] rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              className="min-h-[42px] px-5 py-2 text-sm font-medium text-white bg-[#0284C7] hover:bg-[#0369A1] dark:bg-[#0EA5E9] dark:text-[#08131E] dark:hover:bg-[#38BDF8] rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
             >
               {modal.editing ? 'Save Changes' : 'Save'}
             </button>

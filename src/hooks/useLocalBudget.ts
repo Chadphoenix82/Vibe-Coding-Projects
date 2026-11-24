@@ -85,6 +85,20 @@ export function useLocalBudget() {
     }));
   }, []);
 
+  const clearCategoryExpenses = useCallback((categoryId: string) => {
+    setStore((prev) => ({
+      ...prev,
+      expenses: prev.expenses.filter((item) => item.categoryId !== categoryId),
+    }));
+  }, []);
+
+  const clearAllExpenses = useCallback(() => {
+    setStore((prev) => ({
+      ...prev,
+      expenses: [],
+    }));
+  }, []);
+
   const addIncome = useCallback((income: Omit<IncomeItem, 'id'>) => {
     const newItem: IncomeItem = { ...income, id: generateId('inc') };
     setStore((prev) => ({
@@ -226,6 +240,8 @@ export function useLocalBudget() {
     addExpense,
     updateExpense,
     deleteExpense,
+    clearCategoryExpenses,
+    clearAllExpenses,
     addIncome,
     updateIncome,
     toggleIncomeActive,

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ArrowRight, Plus } from 'lucide-react';
+import { ArrowRight, Plus, Trash2 } from 'lucide-react';
 import { formatCurrency, formatPercent } from '../types/budget';
 
 export interface PieSliceDatum {
@@ -21,6 +21,7 @@ interface CircularPieChartProps {
   selectedSliceId: string | null;
   onSelectSlice: (id: string | null) => void;
   onInspectCategory: (categoryId: string) => void;
+  onClearCategory?: (categoryId: string, categoryName: string) => void;
   onAddFirstExpense: () => void;
 }
 
@@ -85,6 +86,11 @@ function describeDonutArc(
   ].join(' ');
 }
 
+function truncateSvgLabel(text: string, maxChars: number): string {
+  if (text.length <= maxChars) return text;
+  return `${text.slice(0, maxChars - 1).trimEnd()}…`;
+}
+
 export function CircularPieChart({
   mode,
   onModeChange,
@@ -94,22 +100,24 @@ export function CircularPieChart({
   selectedSliceId,
   onSelectSlice,
   onInspectCategory,
+  onClearCategory,
   onAddFirstExpense,
 }: CircularPieChartProps) {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [confirmClearId, setConfirmClearId] = useState<string | null>(null);
 
   const nonZeroSlices = useMemo(
     () => slices.filter((slice) => slice.value > 0.001),
     [slices]
   );
 
-  const outerRadius = 130;
-  const innerRadius = 78;
+  const cx = 160;
+  const cy = 160;
+  const outerRadius = 132;
+  const innerRadius = 84;
   const midRadius = (outerRadius + innerRadius) / 2;
 
   const computedSlices: ComputedSlice[] = useMemo(() => {
-    const cx = 160;
-    const cy = 160;
     const sum = nonZeroSlices.reduce((acc, s) => acc + s.value, 0);
     if (sum <= 0) return [];
 
@@ -123,7 +131,7 @@ export function CircularPieChart({
       currentAngle = endAngle;
 
       const labelPos = polarToCartesian(cx, cy, midRadius, midAngle);
-      const popOffset = 7;
+      const popOffset = 6;
       const popRad = ((midAngle - 90) * Math.PI) / 180;
       const popX = Math.cos(popRad) * popOffset;
       const popY = Math.sin(popRad) * popOffset;
@@ -149,28 +157,42 @@ export function CircularPieChart({
   const activeId = hoveredId ?? selectedSliceId;
   const activeSlice = computedSlices.find((s) => s.id === activeId) ?? null;
 
+  const centerHeading = activeSlice
+    ? truncateSvgLabel(activeSlice.label, 17)
+    : mode === 'expenses'
+    ? 'Monthly Total'
+    : 'Monthly Split';
+
+  const centerAmountStr = formatCurrency(activeSlice ? activeSlice.value : totalAmount);
+  const centerAmountFontSize =
+    centerAmountStr.length >= 11 ? 14 : centerAmountStr.length >= 9 ? 16 : 18;
+
+  const centerSubtext = activeSlice
+    ? `${formatPercent(activeSlice.percentage)} / mo`
+    : `${computedSlices.length} ${computedSlices.length === 1 ? 'category' : 'categories'}`;
+
   return (
     <section
       aria-label="Spending distribution donut chart"
-      className="bg-white border border-[#D4E7F7] rounded-xl p-6 flex flex-col justify-between"
+      className="@container bg-white dark:bg-[#112233] border border-[#D4E7F7] dark:border-[#1E3750] rounded-xl p-5 sm:p-6 flex flex-col justify-between"
     >
       {/* Header & Mode Switch */}
-      <div className="flex flex-wrap items-start justify-between gap-4 pb-5 border-b border-[#E6F1FA]">
-        <div>
-          <h2 className="text-lg font-semibold text-[#0F2537] tracking-tight">
+      <div className="flex flex-wrap items-start justify-between gap-3 pb-4 border-b border-[#E6F1FA] dark:border-[#1A3046]">
+        <div className="min-w-0">
+          <h2 className="text-base sm:text-lg font-semibold text-[#0F2537] dark:text-[#EDF6FF] tracking-tight">
             {mode === 'expenses' ? 'Expense Distribution' : 'Monthly Income Allocation'}
           </h2>
-          <p className="text-sm text-[#4B6780] mt-0.5">
+          <p className="text-xs sm:text-sm text-[#4B6780] dark:text-[#93B4CF] mt-0.5">
             {mode === 'expenses'
-              ? 'Hover or click any donut segment to inspect category spending.'
-              : 'How your monthly income splits across expenses, savings goals, and remaining cash.'}
+              ? 'Tap or hover any donut segment to inspect category spending.'
+              : 'How your monthly income splits across expenses, goals, and free cash.'}
           </p>
         </div>
 
         <div
           role="tablist"
           aria-label="Donut chart view"
-          className="inline-flex items-center p-1 bg-[#EBF5FD] rounded-lg border border-[#D4E7F7] shrink-0"
+          className="inline-flex items-center p-1 bg-[#EBF5FD] dark:bg-[#0B1825] rounded-lg border border-[#D4E7F7] dark:border-[#1E3750] shrink-0"
         >
           <button
             type="button"
@@ -180,10 +202,10 @@ export function CircularPieChart({
               onModeChange('expenses');
               onSelectSlice(null);
             }}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+            className={`min-h-[34px] px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
               mode === 'expenses'
-                ? 'bg-white text-[#0C4A6E] shadow-xs'
-                : 'text-[#4B6780] hover:text-[#0F2537]'
+                ? 'bg-white dark:bg-[#183148] text-[#0C4A6E] dark:text-[#7DD3FC] shadow-xs'
+                : 'text-[#4B6780] dark:text-[#8FB0CC] hover:text-[#0F2537] dark:hover:text-white'
             }`}
           >
             Expenses
@@ -196,10 +218,10 @@ export function CircularPieChart({
               onModeChange('cashflow');
               onSelectSlice(null);
             }}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+            className={`min-h-[34px] px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
               mode === 'cashflow'
-                ? 'bg-white text-[#0C4A6E] shadow-xs'
-                : 'text-[#4B6780] hover:text-[#0F2537]'
+                ? 'bg-white dark:bg-[#183148] text-[#0C4A6E] dark:text-[#7DD3FC] shadow-xs'
+                : 'text-[#4B6780] dark:text-[#8FB0CC] hover:text-[#0F2537] dark:hover:text-white'
             }`}
           >
             Income Split
@@ -207,64 +229,84 @@ export function CircularPieChart({
         </div>
       </div>
 
-      {/* Main Chart + Legend Split */}
+      {/* Main Chart + Legend Split (container-aware so legend never collides with donut) */}
       {computedSlices.length === 0 ? (
-        <div className="py-14 flex flex-col items-center justify-center text-center">
-          <div className="relative w-48 h-48 flex items-center justify-center">
-            <svg viewBox="0 0 200 200" className="w-48 h-48" aria-hidden="true">
-              <circle
-                cx="100"
-                cy="100"
-                r="76"
-                fill="none"
-                stroke="#D4E7F7"
-                strokeWidth="28"
-                strokeDasharray="6 6"
-              />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center px-6">
-              <span className="font-mono tabular-nums text-lg font-semibold text-[#0F2537]">
-                $0.00
-              </span>
-              <span className="text-xs text-[#4B6780] mt-0.5">
-                {mode === 'expenses' ? 'No expenses yet' : 'No monthly data'}
-              </span>
-            </div>
-          </div>
-          <p className="text-sm text-[#4B6780] mt-5 max-w-xs">
+        <div className="py-10 sm:py-12 flex flex-col items-center justify-center text-center">
+          <svg
+            viewBox="0 0 200 200"
+            className="w-40 h-40 sm:w-44 sm:h-44"
+            role="img"
+            aria-label="Empty donut chart: $0.00"
+          >
+            <circle
+              cx="100"
+              cy="100"
+              r="76"
+              fill="none"
+              className="stroke-[#D4E7F7] dark:stroke-[#1E3750]"
+              strokeWidth="26"
+              strokeDasharray="6 6"
+            />
+            <text
+              x="100"
+              y="94"
+              textAnchor="middle"
+              dominantBaseline="central"
+              fontSize="16"
+              fontWeight="600"
+              className="fill-[#0F2537] dark:fill-[#EDF6FF] font-mono"
+            >
+              $0.00
+            </text>
+            <text
+              x="100"
+              y="114"
+              textAnchor="middle"
+              dominantBaseline="central"
+              fontSize="10"
+              className="fill-[#4B6780] dark:fill-[#93B4CF]"
+            >
+              {mode === 'expenses' ? 'No expenses yet' : 'No monthly data'}
+            </text>
+          </svg>
+          <p className="text-sm text-[#4B6780] dark:text-[#93B4CF] mt-4 max-w-xs">
             Add your first expense to calculate your spending breakdown across Utilities, Food, Study Materials, and Gaming.
           </p>
           <button
             type="button"
             onClick={onAddFirstExpense}
-            className="mt-4 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#0284C7] hover:bg-[#0369A1] rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+            className="mt-4 min-h-[44px] inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#0284C7] hover:bg-[#0369A1] dark:bg-[#0EA5E9] dark:text-[#08131E] rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             Add First Expense
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-[minmax(0,300px)_1fr] gap-6 items-center py-6">
-          {/* Interactive Donut SVG with Dynamic Center Readout */}
-          <div className="relative flex items-center justify-center">
+        <div className="grid grid-cols-1 @[490px]:grid-cols-[232px_minmax(0,1fr)] gap-5 items-center py-5">
+          {/* Interactive Donut SVG with True Centered SVG Text Overlay */}
+          <div className="flex items-center justify-center">
             <svg
               viewBox="0 0 320 320"
-              className="w-full max-w-[292px] h-auto overflow-visible select-none"
+              className="w-full max-w-[232px] h-auto overflow-visible select-none"
               role="img"
               aria-label={`Donut chart totaling ${formatCurrency(totalAmount)} per month`}
             >
               {/* Soft outer halo ring */}
               <circle
-                cx="160"
-                cy="160"
+                cx={cx}
+                cy={cy}
                 r="142"
-                fill="#F5FAFF"
-                stroke="#E0EFFA"
+                className="fill-[#F5FAFF] dark:fill-[#0D1C2B] stroke-[#E0EFFA] dark:stroke-[#1E3750]"
                 strokeWidth="1"
               />
 
               {/* Crisp center donut hole backdrop */}
-              <circle cx="160" cy="160" r={innerRadius - 1} fill="#FFFFFF" />
+              <circle
+                cx={cx}
+                cy={cy}
+                r={innerRadius - 1}
+                className="fill-white dark:fill-[#112233]"
+              />
 
               {computedSlices.length === 1 ? (
                 <g
@@ -278,18 +320,21 @@ export function CircularPieChart({
                   className="cursor-pointer"
                 >
                   <circle
-                    cx="160"
-                    cy="160"
+                    cx={cx}
+                    cy={cy}
                     r={midRadius}
                     fill="none"
                     stroke={computedSlices[0].color}
                     strokeWidth={outerRadius - innerRadius}
                   />
                   <text
-                    x="160"
-                    y={160 - midRadius + 4}
+                    x={cx}
+                    y={cy - midRadius}
                     textAnchor="middle"
-                    className="fill-white font-mono text-[11px] font-semibold pointer-events-none"
+                    dominantBaseline="central"
+                    fontSize="10"
+                    fontWeight="600"
+                    className="fill-white font-mono pointer-events-none"
                   >
                     100%
                   </text>
@@ -306,7 +351,7 @@ export function CircularPieChart({
                         transform: isActive
                           ? `translate(${slice.popX.toFixed(1)}px, ${slice.popY.toFixed(1)}px)`
                           : 'translate(0px, 0px)',
-                        opacity: isDimmed ? 0.45 : 1,
+                        opacity: isDimmed ? 0.42 : 1,
                         transition:
                           'transform 180ms cubic-bezier(0.16, 1, 0.3, 1), opacity 180ms ease',
                       }}
@@ -329,16 +374,19 @@ export function CircularPieChart({
                       <path
                         d={slice.path}
                         fill={slice.color}
-                        stroke="#FFFFFF"
+                        className="stroke-white dark:stroke-[#112233]"
                         strokeWidth="2.5"
                         strokeLinejoin="round"
                       />
-                      {slice.percentage >= 7 && (
+                      {slice.percentage >= 9 && (
                         <text
                           x={slice.labelX}
-                          y={slice.labelY + 4}
+                          y={slice.labelY}
                           textAnchor="middle"
-                          className="fill-white font-mono text-[11px] font-semibold pointer-events-none"
+                          dominantBaseline="central"
+                          fontSize="10"
+                          fontWeight="600"
+                          className="fill-white font-mono pointer-events-none"
                         >
                           {Math.round(slice.percentage)}%
                         </text>
@@ -347,40 +395,52 @@ export function CircularPieChart({
                   );
                 })
               )}
-            </svg>
 
-            {/* Center Donut Readout */}
-            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center px-16">
-              {activeSlice ? (
-                <>
-                  <span className="text-[11px] font-medium text-[#4B6780] max-w-[126px] truncate">
-                    {activeSlice.label}
-                  </span>
-                  <span className="font-mono tabular-nums text-lg font-semibold text-[#0F2537] mt-0.5">
-                    {formatCurrency(activeSlice.value)}
-                  </span>
-                  <span className="font-mono tabular-nums text-[11px] text-[#0284C7] font-medium mt-0.5">
-                    {formatPercent(activeSlice.percentage)} / mo
-                  </span>
-                </>
-              ) : (
-                <>
-                  <span className="text-[11px] font-medium text-[#4B6780]">
-                    {mode === 'expenses' ? 'Monthly Total' : 'Monthly Split'}
-                  </span>
-                  <span className="font-mono tabular-nums text-lg font-semibold text-[#0F2537] mt-0.5">
-                    {formatCurrency(totalAmount)}
-                  </span>
-                  <span className="text-[11px] text-[#6B87A1] mt-0.5">
-                    {computedSlices.length} {computedSlices.length === 1 ? 'category' : 'categories'}
-                  </span>
-                </>
-              )}
-            </div>
+              {/* Exact Geometrically Centered Donut Hole Readout */}
+              <g className="pointer-events-none">
+                <text
+                  x={cx}
+                  y={cy - 22}
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  fontSize="10.5"
+                  fontWeight="500"
+                  className="fill-[#4B6780] dark:fill-[#93B4CF]"
+                >
+                  {centerHeading}
+                </text>
+                <text
+                  x={cx}
+                  y={cy + 1}
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  fontSize={centerAmountFontSize}
+                  fontWeight="600"
+                  className="fill-[#0F2537] dark:fill-[#EDF6FF] font-mono tabular-nums"
+                >
+                  {centerAmountStr}
+                </text>
+                <text
+                  x={cx}
+                  y={cy + 23}
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  fontSize="10"
+                  fontWeight="500"
+                  className={
+                    activeSlice
+                      ? 'fill-[#0284C7] dark:fill-[#38BDF8] font-mono tabular-nums'
+                      : 'fill-[#6B87A1] dark:fill-[#7496B5]'
+                  }
+                >
+                  {centerSubtext}
+                </text>
+              </g>
+            </svg>
           </div>
 
           {/* Interactive Legend Table */}
-          <div className="divide-y divide-[#EAF3FB]">
+          <div className="divide-y divide-[#EAF3FB] dark:divide-[#1A3046] min-w-0">
             {computedSlices.map((slice) => {
               const isActive = activeId === slice.id;
               return (
@@ -392,21 +452,23 @@ export function CircularPieChart({
                   onClick={() =>
                     onSelectSlice(selectedSliceId === slice.id ? null : slice.id)
                   }
-                  className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 text-left rounded-lg transition-colors cursor-pointer ${
-                    isActive ? 'bg-[#EBF5FD]' : 'hover:bg-[#F5FAFF]'
+                  className={`w-full min-h-[44px] flex items-center justify-between gap-3 px-2.5 py-2 text-left rounded-lg transition-colors cursor-pointer ${
+                    isActive
+                      ? 'bg-[#EBF5FD] dark:bg-[#173047]'
+                      : 'hover:bg-[#F5FAFF] dark:hover:bg-[#142A3E]'
                   }`}
                 >
-                  <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
                     <span
-                      className="w-3 h-3 rounded-[3px] shrink-0"
+                      className="w-2.5 h-2.5 rounded-[3px] shrink-0"
                       style={{ backgroundColor: slice.color }}
                       aria-hidden="true"
                     />
-                    <div className="min-w-0">
-                      <div className="text-sm font-medium text-[#0F2537] truncate">
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs sm:text-sm font-medium text-[#0F2537] dark:text-[#EDF6FF] truncate">
                         {slice.label}
                       </div>
-                      <div className="text-xs text-[#4B6780]">
+                      <div className="text-[11px] text-[#4B6780] dark:text-[#93B4CF] truncate">
                         {slice.itemCount !== undefined
                           ? `${slice.itemCount} ${slice.itemCount === 1 ? 'item' : 'items'}`
                           : 'Monthly allocation'}
@@ -423,10 +485,10 @@ export function CircularPieChart({
                   </div>
 
                   <div className="text-right shrink-0">
-                    <div className="font-mono tabular-nums text-sm font-semibold text-[#0F2537]">
+                    <div className="font-mono tabular-nums text-xs sm:text-sm font-semibold text-[#0F2537] dark:text-[#EDF6FF]">
                       {formatCurrency(slice.value)}
                     </div>
-                    <div className="font-mono tabular-nums text-xs text-[#4B6780]">
+                    <div className="font-mono tabular-nums text-[11px] text-[#4B6780] dark:text-[#93B4CF]">
                       {formatPercent(slice.percentage)}
                     </div>
                   </div>
@@ -438,22 +500,24 @@ export function CircularPieChart({
       )}
 
       {/* Selected / Hovered Slice Detail Strip */}
-      <div className="pt-4 border-t border-[#E6F1FA] min-h-[52px] flex flex-wrap items-center justify-between gap-3">
+      <div className="pt-3.5 border-t border-[#E6F1FA] dark:border-[#1A3046] min-h-[48px] flex flex-wrap items-center justify-between gap-3">
         {activeSlice ? (
           <>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs sm:text-sm">
               <span
                 className="w-2.5 h-2.5 rounded-[2px] shrink-0"
                 style={{ backgroundColor: activeSlice.color }}
                 aria-hidden="true"
               />
-              <span className="font-semibold text-[#0F2537]">{activeSlice.label}</span>
-              <span className="text-[#94B4CE]" aria-hidden="true">/</span>
-              <span className="font-mono tabular-nums text-[#0F2537]">
+              <span className="font-semibold text-[#0F2537] dark:text-[#EDF6FF]">
+                {activeSlice.label}
+              </span>
+              <span className="text-[#94B4CE] dark:text-[#456787]" aria-hidden="true">/</span>
+              <span className="font-mono tabular-nums text-[#0F2537] dark:text-[#EDF6FF]">
                 {formatCurrency(activeSlice.value)}/mo
               </span>
-              <span className="text-[#94B4CE]" aria-hidden="true">·</span>
-              <span className="text-xs text-[#4B6780]">
+              <span className="text-[#94B4CE] dark:text-[#456787]" aria-hidden="true">·</span>
+              <span className="text-xs text-[#4B6780] dark:text-[#93B4CF]">
                 {formatPercent(activeSlice.percentage)} of chart
                 {monthlyIncome > 0
                   ? ` · ${formatPercent((activeSlice.value / monthlyIncome) * 100)} of income`
@@ -462,19 +526,58 @@ export function CircularPieChart({
             </div>
 
             {activeSlice.isCategory && (
-              <button
-                type="button"
-                onClick={() => onInspectCategory(activeSlice.id)}
-                className="inline-flex items-center gap-1.5 text-xs font-medium text-[#0284C7] hover:text-[#0369A1] whitespace-nowrap shrink-0 cursor-pointer"
-              >
-                View {activeSlice.label} items
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
+              <div className="flex items-center gap-3 shrink-0">
+                {onClearCategory && (
+                  confirmClearId === activeSlice.id ? (
+                    <div className="inline-flex items-center gap-1.5 text-xs">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onClearCategory(activeSlice.id, activeSlice.label);
+                          setConfirmClearId(null);
+                          onSelectSlice(null);
+                        }}
+                        className="min-h-[32px] px-2.5 py-1 font-semibold text-white bg-[#BE123C] hover:bg-[#9F1239] rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                      >
+                        Confirm Clear
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmClearId(null)}
+                        className="min-h-[32px] px-2 py-1 text-[#4B6780] dark:text-[#93B4CF] hover:text-[#0F2537] dark:hover:text-white cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onSelectSlice(activeSlice.id);
+                        setConfirmClearId(activeSlice.id);
+                      }}
+                      className="min-h-[34px] inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-[#BE123C] dark:text-[#FB7185] hover:bg-[#FFF1F2] dark:hover:bg-[#3B1020] rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+                      Clear {activeSlice.label}
+                    </button>
+                  )
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => onInspectCategory(activeSlice.id)}
+                  className="min-h-[36px] inline-flex items-center gap-1.5 text-xs font-medium text-[#0284C7] dark:text-[#38BDF8] hover:text-[#0369A1] dark:hover:text-[#7DD3FC] whitespace-nowrap shrink-0 cursor-pointer"
+                >
+                  View items
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
             )}
           </>
         ) : (
-          <div className="text-xs text-[#4B6780]">
-            Hover or click any segment in the donut chart to inspect its monthly share and income ratio.
+          <div className="text-xs text-[#4B6780] dark:text-[#93B4CF]">
+            Tap or hover any segment in the donut chart to inspect its monthly share and income ratio.
           </div>
         )}
       </div>

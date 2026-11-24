@@ -1,10 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
-import {
-  SavingsGoal,
-  formatCurrency,
-  formatPercent,
-} from '../types/budget';
+import { SavingsGoal, formatCurrency, formatPercent } from '../types/budget';
 
 interface SavingsGoalsViewProps {
   goals: SavingsGoal[];
@@ -28,32 +24,42 @@ function RadialProgressRing({
   const strokeDashoffset = circumference - (clamped / 100) * circumference;
 
   return (
-    <div className="relative w-20 h-20 shrink-0 flex items-center justify-center">
-      <svg viewBox="0 0 84 84" className="w-20 h-20 -rotate-90" aria-hidden="true">
-        <circle
-          cx="42"
-          cy="42"
-          r={radius}
-          fill="none"
-          stroke="#E3F1FC"
-          strokeWidth="7"
-        />
-        <circle
-          cx="42"
-          cy="42"
-          r={radius}
-          fill="none"
-          stroke={color}
-          strokeWidth="7"
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={strokeDashoffset}
-          style={{ transition: 'stroke-dashoffset 220ms cubic-bezier(0.16, 1, 0.3, 1)' }}
-        />
+    <div className="w-20 h-20 shrink-0 flex items-center justify-center">
+      <svg viewBox="0 0 84 84" className="w-20 h-20" role="img" aria-label={`${Math.round(clamped)}% saved`}>
+        <g transform="rotate(-90 42 42)">
+          <circle
+            cx="42"
+            cy="42"
+            r={radius}
+            fill="none"
+            className="stroke-[#E3F1FC] dark:stroke-[#193047]"
+            strokeWidth="7"
+          />
+          <circle
+            cx="42"
+            cy="42"
+            r={radius}
+            fill="none"
+            stroke={color}
+            strokeWidth="7"
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={strokeDashoffset}
+            style={{ transition: 'stroke-dashoffset 220ms cubic-bezier(0.16, 1, 0.3, 1)' }}
+          />
+        </g>
+        <text
+          x="42"
+          y="42"
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize="11.5"
+          fontWeight="600"
+          className="fill-[#0F2537] dark:fill-[#EDF6FF] font-mono tabular-nums"
+        >
+          {Math.round(clamped)}%
+        </text>
       </svg>
-      <span className="absolute font-mono tabular-nums text-xs font-semibold text-[#0F2537]">
-        {Math.round(clamped)}%
-      </span>
     </div>
   );
 }
@@ -88,57 +94,64 @@ export function SavingsGoalsView({
   const surplusAfterGoals = monthlySurplus - totals.monthlyPlanned;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6">
       {/* Top KPI Summary Strip */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <div className="bg-white border border-[#D4E7F7] rounded-xl p-5">
-          <div className="text-xs font-medium text-[#4B6780]">Total Saved</div>
-          <div className="font-mono tabular-nums text-2xl font-semibold text-[#0F2537] mt-1.5">
+      <div className="grid grid-cols-2 min-[840px]:grid-cols-4 gap-3 sm:gap-4">
+        <div className="bg-white dark:bg-[#112233] border border-[#D4E7F7] dark:border-[#1E3750] rounded-xl p-4 sm:p-5 min-w-0">
+          <div className="text-xs font-medium text-[#4B6780] dark:text-[#93B4CF] truncate">Total Saved</div>
+          <div className="font-mono tabular-nums text-base sm:text-xl font-semibold text-[#0F2537] dark:text-[#EDF6FF] mt-1 tracking-tight truncate">
             {formatCurrency(totals.saved)}
           </div>
-          <div className="text-xs text-[#4B6780] mt-2">
+          <div className="text-[11px] sm:text-xs text-[#4B6780] dark:text-[#93B4CF] mt-1.5">
             Across {goals.length} {goals.length === 1 ? 'goal' : 'goals'}
           </div>
         </div>
 
-        <div className="bg-white border border-[#D4E7F7] rounded-xl p-5">
-          <div className="text-xs font-medium text-[#4B6780]">Combined Target</div>
-          <div className="font-mono tabular-nums text-2xl font-semibold text-[#0F2537] mt-1.5">
+        <div className="bg-white dark:bg-[#112233] border border-[#D4E7F7] dark:border-[#1E3750] rounded-xl p-4 sm:p-5 min-w-0">
+          <div className="text-xs font-medium text-[#4B6780] dark:text-[#93B4CF] truncate">
+            Combined Target
+          </div>
+          <div className="font-mono tabular-nums text-base sm:text-xl font-semibold text-[#0F2537] dark:text-[#EDF6FF] mt-1 tracking-tight truncate">
             {formatCurrency(totals.target)}
           </div>
-          <div className="text-xs text-[#4B6780] mt-2">
-            <span className="font-mono tabular-nums">{formatCurrency(totals.remaining)}</span> remaining
+          <div className="text-[11px] sm:text-xs text-[#4B6780] dark:text-[#93B4CF] mt-1.5 truncate">
+            <span className="font-mono tabular-nums">{formatCurrency(totals.remaining)}</span> left
           </div>
         </div>
 
-        <div className="bg-white border border-[#D4E7F7] rounded-xl p-5">
-          <div className="text-xs font-medium text-[#4B6780]">Overall Progress</div>
-          <div className="font-mono tabular-nums text-2xl font-semibold text-[#0284C7] mt-1.5">
+        <div className="bg-white dark:bg-[#112233] border border-[#D4E7F7] dark:border-[#1E3750] rounded-xl p-4 sm:p-5 min-w-0">
+          <div className="text-xs font-medium text-[#4B6780] dark:text-[#93B4CF] truncate">
+            Overall Progress
+          </div>
+          <div className="font-mono tabular-nums text-base sm:text-xl font-semibold text-[#0284C7] dark:text-[#38BDF8] mt-1 tracking-tight truncate">
             {formatPercent(totals.progressPct)}
           </div>
-          <div className="mt-2.5 h-1.5 w-full bg-[#E6F2FC] rounded-full overflow-hidden">
+          <div className="mt-2 h-1.5 w-full bg-[#E6F2FC] dark:bg-[#193047] rounded-full overflow-hidden">
             <div
-              className="h-full bg-[#0284C7] rounded-full transition-all duration-200"
+              className="h-full bg-[#0284C7] dark:bg-[#38BDF8] rounded-full transition-all duration-200"
               style={{ width: `${totals.progressPct}%` }}
             />
           </div>
         </div>
 
-        <div className="bg-white border border-[#D4E7F7] rounded-xl p-5">
-          <div className="text-xs font-medium text-[#4B6780]">Planned Monthly Allocation</div>
-          <div className="font-mono tabular-nums text-2xl font-semibold text-[#0F2537] mt-1.5">
+        <div className="bg-white dark:bg-[#112233] border border-[#D4E7F7] dark:border-[#1E3750] rounded-xl p-4 sm:p-5 min-w-0">
+          <div className="text-xs font-medium text-[#4B6780] dark:text-[#93B4CF] truncate">
+            Monthly Plan
+          </div>
+          <div className="font-mono tabular-nums text-base sm:text-xl font-semibold text-[#0F2537] dark:text-[#EDF6FF] mt-1 tracking-tight truncate">
             {formatCurrency(totals.monthlyPlanned)}
           </div>
-          <div className="text-xs mt-2">
+          <div className="text-[11px] sm:text-xs mt-1.5 truncate">
             {surplusAfterGoals >= 0 ? (
-              <span className="text-[#0F766E]">
-                Fits budget ·{' '}
-                <span className="font-mono tabular-nums">{formatCurrency(surplusAfterGoals)}</span> left
+              <span className="text-[#0F766E] dark:text-[#2DD4BF]">
+                Fits · <span className="font-mono tabular-nums">{formatCurrency(surplusAfterGoals)}</span> free
               </span>
             ) : (
-              <span className="text-[#B45309]">
-                Exceeds surplus by{' '}
-                <span className="font-mono tabular-nums">{formatCurrency(Math.abs(surplusAfterGoals))}</span>
+              <span className="text-[#B45309] dark:text-[#FBBF24]">
+                Over by{' '}
+                <span className="font-mono tabular-nums">
+                  {formatCurrency(Math.abs(surplusAfterGoals))}
+                </span>
               </span>
             )}
           </div>
@@ -148,39 +161,43 @@ export function SavingsGoalsView({
       {/* Header Action Row */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-[#0F2537]">Your Savings Milestones</h2>
-          <p className="text-sm text-[#4B6780]">
+          <h2 className="text-lg font-semibold text-[#0F2537] dark:text-[#EDF6FF]">
+            Your Savings Milestones
+          </h2>
+          <p className="text-sm text-[#4B6780] dark:text-[#93B4CF]">
             Deposit funds directly into any goal and track projected completion dates.
           </p>
         </div>
         <button
           type="button"
           onClick={onAddGoal}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#0284C7] hover:bg-[#0369A1] rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+          className="min-h-[42px] inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#0284C7] hover:bg-[#0369A1] dark:bg-[#0EA5E9] dark:text-[#08131E] dark:hover:bg-[#38BDF8] rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           New Savings Goal
         </button>
       </div>
 
-      {/* Goals Grid */}
+      {/* Goals Grid (2 columns in Android landscape & desktop) */}
       {goals.length === 0 ? (
-        <div className="bg-white border border-[#D4E7F7] rounded-xl p-12 text-center">
-          <h3 className="text-base font-semibold text-[#0F2537]">No savings goals yet</h3>
-          <p className="text-sm text-[#4B6780] mt-1.5 max-w-md mx-auto">
+        <div className="bg-white dark:bg-[#112233] border border-[#D4E7F7] dark:border-[#1E3750] rounded-xl p-12 text-center">
+          <h3 className="text-base font-semibold text-[#0F2537] dark:text-[#EDF6FF]">
+            No savings goals yet
+          </h3>
+          <p className="text-sm text-[#4B6780] dark:text-[#93B4CF] mt-1.5 max-w-md mx-auto">
             Create targets for big student purchases like a New Laptop, Spring Break Trip, or Emergency Fund and allocate funds as you save.
           </p>
           <button
             type="button"
             onClick={onAddGoal}
-            className="mt-5 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#0284C7] hover:bg-[#0369A1] rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+            className="mt-5 min-h-[42px] inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#0284C7] hover:bg-[#0369A1] dark:bg-[#0EA5E9] dark:text-[#08131E] rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             Create First Goal
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 landscape:grid-cols-2 lg:grid-cols-2 gap-4 sm:gap-5">
           {goals.map((goal) => {
             const pct =
               goal.targetAmount > 0 ? Math.min(100, (goal.savedAmount / goal.targetAmount) * 100) : 0;
@@ -190,12 +207,12 @@ export function SavingsGoalsView({
               !isComplete && goal.monthlyAllocation > 0
                 ? Math.ceil(remaining / goal.monthlyAllocation)
                 : null;
-            const ringColor = isComplete ? '#0F766E' : goal.color;
+            const ringColor = isComplete ? '#14B8A6' : goal.color;
 
             return (
               <article
                 key={goal.id}
-                className="bg-white border border-[#D4E7F7] rounded-xl p-6 flex flex-col justify-between gap-5"
+                className="bg-white dark:bg-[#112233] border border-[#D4E7F7] dark:border-[#1E3750] rounded-xl p-5 sm:p-6 flex flex-col justify-between gap-5"
               >
                 <div className="flex items-start gap-4">
                   <RadialProgressRing percentage={pct} color={ringColor} />
@@ -203,12 +220,14 @@ export function SavingsGoalsView({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <h3 className="text-base font-semibold text-[#0F2537] truncate">
+                        <h3 className="text-base font-semibold text-[#0F2537] dark:text-[#EDF6FF] truncate">
                           {goal.name}
                         </h3>
-                        <div className="text-xs text-[#4B6780] mt-0.5">
+                        <div className="text-xs text-[#4B6780] dark:text-[#93B4CF] mt-0.5">
                           {isComplete ? (
-                            <span className="text-[#0F766E] font-medium">Target reached</span>
+                            <span className="text-[#0F766E] dark:text-[#2DD4BF] font-medium">
+                              Target reached
+                            </span>
                           ) : (
                             <>
                               <span className="font-mono tabular-nums">
@@ -231,7 +250,7 @@ export function SavingsGoalsView({
                           type="button"
                           onClick={() => onEditGoal(goal)}
                           aria-label={`Edit ${goal.name}`}
-                          className="p-1.5 text-[#4B6780] hover:text-[#0284C7] hover:bg-[#EBF5FD] rounded-lg transition-colors cursor-pointer"
+                          className="min-h-[36px] min-w-[36px] inline-flex items-center justify-center text-[#4B6780] dark:text-[#93B4CF] hover:text-[#0284C7] dark:hover:text-[#38BDF8] hover:bg-[#EBF5FD] dark:hover:bg-[#19334C] rounded-lg transition-colors cursor-pointer"
                         >
                           <Pencil className="w-4 h-4" />
                         </button>
@@ -239,7 +258,7 @@ export function SavingsGoalsView({
                           type="button"
                           onClick={() => onDeleteGoal(goal.id)}
                           aria-label={`Delete ${goal.name}`}
-                          className="p-1.5 text-[#4B6780] hover:text-[#BE123C] hover:bg-[#FFF1F2] rounded-lg transition-colors cursor-pointer"
+                          className="min-h-[36px] min-w-[36px] inline-flex items-center justify-center text-[#4B6780] dark:text-[#93B4CF] hover:text-[#BE123C] dark:hover:text-[#FB7185] hover:bg-[#FFF1F2] dark:hover:bg-[#3B1020] rounded-lg transition-colors cursor-pointer"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -247,19 +266,21 @@ export function SavingsGoalsView({
                     </div>
 
                     {goal.note && (
-                      <p className="text-xs text-[#607D96] mt-2 line-clamp-2">{goal.note}</p>
+                      <p className="text-xs text-[#607D96] dark:text-[#7496B5] mt-2 line-clamp-2">
+                        {goal.note}
+                      </p>
                     )}
 
                     <div className="mt-3 flex flex-wrap items-baseline justify-between gap-2 text-sm">
-                      <span className="font-mono tabular-nums font-semibold text-[#0F2537]">
+                      <span className="font-mono tabular-nums font-semibold text-[#0F2537] dark:text-[#EDF6FF]">
                         {formatCurrency(goal.savedAmount)}
                       </span>
-                      <span className="font-mono tabular-nums text-xs text-[#4B6780]">
+                      <span className="font-mono tabular-nums text-xs text-[#4B6780] dark:text-[#93B4CF]">
                         Goal {formatCurrency(goal.targetAmount)}
                       </span>
                     </div>
 
-                    <div className="mt-1.5 h-2 w-full bg-[#EAF4FC] rounded-full overflow-hidden">
+                    <div className="mt-1.5 h-2 w-full bg-[#EAF4FC] dark:bg-[#193047] rounded-full overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all duration-200"
                         style={{
@@ -269,10 +290,10 @@ export function SavingsGoalsView({
                       />
                     </div>
 
-                    <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-[#4B6780]">
+                    <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-[#4B6780] dark:text-[#93B4CF]">
                       <span>
                         Monthly plan:{' '}
-                        <span className="font-mono tabular-nums font-medium text-[#0F2537]">
+                        <span className="font-mono tabular-nums font-medium text-[#0F2537] dark:text-[#EDF6FF]">
                           {formatCurrency(goal.monthlyAllocation)}/mo
                         </span>
                       </span>
@@ -288,16 +309,18 @@ export function SavingsGoalsView({
                 </div>
 
                 {/* Fund Allocation Controls */}
-                <div className="pt-4 border-t border-[#E6F1FA] space-y-3">
+                <div className="pt-4 border-t border-[#E6F1FA] dark:border-[#1A3046] space-y-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="text-xs font-medium text-[#4B6780]">Quick allocate</span>
+                    <span className="text-xs font-medium text-[#4B6780] dark:text-[#93B4CF]">
+                      Quick allocate
+                    </span>
                     <div className="flex flex-wrap items-center gap-1.5">
                       {[10, 25, 50, 100].map((amt) => (
                         <button
                           key={amt}
                           type="button"
                           onClick={() => onAllocate(goal.id, amt)}
-                          className="px-2.5 py-1 text-xs font-mono font-medium text-[#0369A1] bg-[#EBF5FD] hover:bg-[#D5ECFC] rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                          className="min-h-[36px] px-2.5 py-1 text-xs font-mono font-medium text-[#0369A1] dark:text-[#7DD3FC] bg-[#EBF5FD] dark:bg-[#163049] hover:bg-[#D5ECFC] dark:hover:bg-[#1E3F5E] rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer"
                         >
                           +${amt}
                         </button>
@@ -310,8 +333,9 @@ export function SavingsGoalsView({
                       type="number"
                       step="0.01"
                       min="0"
+                      inputMode="decimal"
                       aria-label={`Custom allocation amount for ${goal.name}`}
-                      placeholder="Custom amount ($)"
+                      placeholder="Custom ($)"
                       value={customAmounts[goal.id] ?? ''}
                       onChange={(e) =>
                         setCustomAmounts((prev) => ({ ...prev, [goal.id]: e.target.value }))
@@ -322,12 +346,12 @@ export function SavingsGoalsView({
                           handleCustomAllocate(goal.id, 1);
                         }
                       }}
-                      className="flex-1 min-w-0 px-3 py-1.5 text-sm bg-[#F8FBFE] border border-[#CBE2F5] rounded-lg text-[#0F2537] font-mono tabular-nums placeholder:text-[#7E9BB5] focus:bg-white focus:border-[#0284C7] focus:outline-none"
+                      className="flex-1 min-w-0 min-h-[40px] px-3 py-1.5 text-sm bg-[#F8FBFE] dark:bg-[#0B1825] border border-[#CBE2F5] dark:border-[#1E3750] rounded-lg text-[#0F2537] dark:text-[#EDF6FF] font-mono tabular-nums placeholder:text-[#7E9BB5] dark:placeholder:text-[#5E7E9B] focus:bg-white dark:focus:bg-[#0D1E2E] focus:border-[#0284C7] dark:focus:border-[#38BDF8] focus:outline-none"
                     />
                     <button
                       type="button"
                       onClick={() => handleCustomAllocate(goal.id, 1)}
-                      className="px-3.5 py-1.5 text-xs font-medium text-white bg-[#0284C7] hover:bg-[#0369A1] rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                      className="min-h-[40px] px-3.5 py-1.5 text-xs font-medium text-white bg-[#0284C7] hover:bg-[#0369A1] dark:bg-[#0EA5E9] dark:text-[#08131E] dark:hover:bg-[#38BDF8] rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
                     >
                       Deposit
                     </button>
@@ -335,7 +359,7 @@ export function SavingsGoalsView({
                       type="button"
                       onClick={() => handleCustomAllocate(goal.id, -1)}
                       disabled={goal.savedAmount <= 0}
-                      className="px-3 py-1.5 text-xs font-medium text-[#4B6780] hover:text-[#0F2537] hover:bg-[#EBF5FD] disabled:opacity-40 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                      className="min-h-[40px] px-3 py-1.5 text-xs font-medium text-[#4B6780] dark:text-[#93B4CF] hover:text-[#0F2537] dark:hover:text-white hover:bg-[#EBF5FD] dark:hover:bg-[#163049] disabled:opacity-40 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
                     >
                       Withdraw
                     </button>

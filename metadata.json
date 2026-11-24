@@ -1,6 +1,8 @@
 {
   "name": "ClearTerm — Student Budget Calculator",
-  "description": "A sleek light blue student budgeting app with circular pie chart expense tracking, separate categories, multi-source income tracking, and savings goals stored locally in your browser.",
+  "description": "A sleek light blue student budgeting app with donut chart expense tracking, separate categories, multi-source income tracking, and savings goals stored locally in your browser.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

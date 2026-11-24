@@ -2,16 +2,23 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>ClearTerm — Student Budget Calculator</title>
     <meta
       name="description"
-      content="A sleek light blue student budgeting app with circular pie chart expense tracking, separate categories, multi-source income tracking, and savings goals stored locally in your browser."
+      content="A sleek light blue student budgeting app with donut chart expense tracking, separate categories, multi-source income tracking, and savings goals stored locally in your browser."
     />
+    <meta name="theme-color" content="#EBF5FD" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="ClearTerm" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
     <meta property="og:title" content="ClearTerm — Student Budget Calculator" />
     <meta
       property="og:description"
-      content="A sleek light blue student budgeting app with circular pie chart expense tracking, separate categories, multi-source income tracking, and savings goals stored locally in your browser."
+      content="A sleek light blue student budgeting app with donut chart expense tracking, separate categories, multi-source income tracking, and savings goals stored locally in your browser."
     />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
@@ -21,8 +28,25 @@
       href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap"
       rel="stylesheet"
     />
+    <script>
+      (function () {
+        try {
+          var pref = localStorage.getItem('clearterm_theme_v1') || 'system';
+          var isDark =
+            pref === 'dark' ||
+            (pref === 'system' &&
+              window.matchMedia &&
+              window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+            var meta = document.querySelector('meta[name="theme-color"]');
+            if (meta) meta.setAttribute('content', '#0D1C2B');
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
-  <body class="bg-[#F2F8FD] text-[#0F2537] antialiased selection:bg-[#BAE6FD] selection:text-[#0C4A6E]">
+  <body class="bg-[#F2F8FD] dark:bg-[#08131E] text-[#0F2537] dark:text-[#EDF6FF] antialiased selection:bg-[#BAE6FD] dark:selection:bg-[#0369A1] selection:text-[#0C4A6E] dark:selection:text-white">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

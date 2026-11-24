@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ArrowRight, Plus } from 'lucide-react';
+import { ArrowRight, Plus, RotateCcw, Trash2 } from 'lucide-react';
 import {
   BudgetCategory,
   ExpenseItem,
@@ -13,17 +13,22 @@ import {
   toMonthlyAmount,
 } from '../types/budget';
 import { CircularPieChart, PieSliceDatum } from './CircularPieChart';
+import { IncomeVsExpensesChart } from './IncomeVsExpensesChart';
 
 interface OverviewViewProps {
   categories: BudgetCategory[];
   expenses: ExpenseItem[];
   incomes: IncomeItem[];
   savingsGoals: SavingsGoal[];
+  isDark: boolean;
   onQuickAddExpense: (expense: Omit<ExpenseItem, 'id'>) => void;
   onAllocateGoal: (goalId: string, delta: number) => void;
   onOpenAddExpense: (defaultCategoryId?: string) => void;
   onOpenAddIncome: () => void;
   onOpenAddGoal: () => void;
+  onClearCategory: (categoryId: string, categoryName: string) => void;
+  onClearAllData: () => void;
+  onLoadSampleData: () => void;
   onNavigate: (tab: 'expenses' | 'income' | 'goals' | 'categories', categoryFilter?: string) => void;
 }
 
@@ -32,17 +37,22 @@ export function OverviewView({
   expenses,
   incomes,
   savingsGoals,
+  isDark,
   onQuickAddExpense,
   onAllocateGoal,
   onOpenAddExpense,
   onOpenAddIncome,
   onOpenAddGoal,
+  onClearCategory,
+  onClearAllData,
+  onLoadSampleData,
   onNavigate,
 }: OverviewViewProps) {
   const [pieMode, setPieMode] = useState<'expenses' | 'cashflow'>('expenses');
   const [selectedSliceId, setSelectedSliceId] = useState<string | null>(null);
+  const [confirmClearAll, setConfirmClearAll] = useState(false);
+  const [confirmClearCatId, setConfirmClearCatId] = useState<string | null>(null);
 
-  // Quick-add expense inline calculator state
   const [quickTitle, setQuickTitle] = useState('');
   const [quickAmount, setQuickAmount] = useState('');
   const [quickCategoryId, setQuickCategoryId] = useState(categories[0]?.id ?? 'utilities');
@@ -123,7 +133,7 @@ export function OverviewView({
         id: '__remaining-cash',
         label: 'Unallocated Cash',
         value: unallocatedMonthlyCash,
-        color: '#7DD3FC',
+        color: '#38BDF8',
         isCategory: false,
       });
     }
@@ -158,78 +168,158 @@ export function OverviewView({
     setQuickAmount('');
   };
 
+  const hasAnyData = expenses.length > 0 || incomes.length > 0 || savingsGoals.length > 0;
+
   return (
-    <div className="space-y-6">
-      {/* 4-Column Monthly Summary KPI Strip */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <div className="bg-white border border-[#D4E7F7] rounded-xl p-5">
-          <div className="text-xs font-medium text-[#4B6780]">Monthly Income</div>
-          <div className="font-mono tabular-nums text-2xl font-semibold text-[#0F2537] mt-1.5">
+    <div className="space-y-5 sm:space-y-6">
+      {/* Quick Overview Utility Strip: Clear All Data / Load Sample */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-xs sm:text-sm text-[#4B6780] dark:text-[#93B4CF]">
+          All figures are calculated monthly and stored locally on this device.
+        </p>
+
+        {hasAnyData ? (
+          confirmClearAll ? (
+            <div className="inline-flex items-center gap-2 text-xs">
+              <span className="text-[#4B6780] dark:text-[#93B4CF] hidden sm:inline">
+                Reset all expenses, income &amp; goals?
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  onClearAllData();
+                  setConfirmClearAll(false);
+                  setSelectedSliceId(null);
+                }}
+                className="min-h-[36px] px-3 py-1.5 font-semibold text-white bg-[#BE123C] hover:bg-[#9F1239] rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              >
+                Confirm Clear All
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmClearAll(false)}
+                className="min-h-[36px] px-3 py-1.5 font-medium text-[#4B6780] dark:text-[#93B4CF] bg-white dark:bg-[#112233] border border-[#D4E7F7] dark:border-[#1E3750] hover:bg-[#EBF5FD] dark:hover:bg-[#163049] rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setConfirmClearAll(true)}
+              className="min-h-[36px] inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#BE123C] dark:text-[#FB7185] bg-white dark:bg-[#112233] hover:bg-[#FFF1F2] dark:hover:bg-[#3B1020] border border-[#FECDD3] dark:border-[#5C1D2E] rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+              Clear All Data
+            </button>
+          )
+        ) : (
+          <button
+            type="button"
+            onClick={onLoadSampleData}
+            className="min-h-[36px] inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#0C4A6E] dark:text-[#7DD3FC] bg-white dark:bg-[#112233] hover:bg-[#EBF5FD] dark:hover:bg-[#163049] border border-[#CBE2F5] dark:border-[#1E3750] rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+          >
+            <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
+            Load Sample Data
+          </button>
+        )}
+      </div>
+
+      {/* 4-Column Monthly Summary KPI Strip (4-up on wide landscape & desktop, 2x2 on compact phones) */}
+      <div className="grid grid-cols-2 min-[840px]:grid-cols-4 gap-3 sm:gap-4">
+        <div className="bg-white dark:bg-[#112233] border border-[#D4E7F7] dark:border-[#1E3750] rounded-xl p-4 sm:p-5 min-w-0">
+          <div className="text-xs font-medium text-[#4B6780] dark:text-[#93B4CF] truncate">
+            Monthly Income
+          </div>
+          <div className="font-mono tabular-nums text-base sm:text-xl font-semibold text-[#0F2537] dark:text-[#EDF6FF] mt-1 tracking-tight truncate">
             {formatCurrency(totalMonthlyIncome)}
           </div>
-          <div className="text-xs text-[#4B6780] mt-2">
+          <div className="text-[11px] sm:text-xs text-[#4B6780] dark:text-[#93B4CF] mt-1.5 truncate">
             {activeIncomes.length} active {activeIncomes.length === 1 ? 'source' : 'sources'}
             <span aria-hidden="true"> · </span>
             <span className="font-mono tabular-nums">{formatCurrency(totalMonthlyIncome * 12)}/yr</span>
           </div>
         </div>
 
-        <div className="bg-white border border-[#D4E7F7] rounded-xl p-5">
-          <div className="text-xs font-medium text-[#4B6780]">Monthly Expenses</div>
-          <div className="font-mono tabular-nums text-2xl font-semibold text-[#0F2537] mt-1.5">
+        <div className="bg-white dark:bg-[#112233] border border-[#D4E7F7] dark:border-[#1E3750] rounded-xl p-4 sm:p-5 min-w-0">
+          <div className="text-xs font-medium text-[#4B6780] dark:text-[#93B4CF] truncate">
+            Monthly Expenses
+          </div>
+          <div className="font-mono tabular-nums text-base sm:text-xl font-semibold text-[#0F2537] dark:text-[#EDF6FF] mt-1 tracking-tight truncate">
             {formatCurrency(totalMonthlyExpenses)}
           </div>
-          <div className="text-xs text-[#4B6780] mt-2">
+          <div className="text-[11px] sm:text-xs text-[#4B6780] dark:text-[#93B4CF] mt-1.5 truncate">
             {expenses.length} {expenses.length === 1 ? 'item' : 'items'}
             <span aria-hidden="true"> · </span>
             <span className="font-mono tabular-nums">
-              {totalMonthlyIncome > 0 ? `${formatPercent(spentRatio)} of income` : 'Add income to compare'}
+              {totalMonthlyIncome > 0 ? `${formatPercent(spentRatio)} of income` : 'No income yet'}
             </span>
           </div>
         </div>
 
-        <div className="bg-white border border-[#D4E7F7] rounded-xl p-5">
-          <div className="text-xs font-medium text-[#4B6780]">Net Monthly Balance</div>
+        <div className="bg-white dark:bg-[#112233] border border-[#D4E7F7] dark:border-[#1E3750] rounded-xl p-4 sm:p-5 min-w-0">
+          <div className="text-xs font-medium text-[#4B6780] dark:text-[#93B4CF] truncate">
+            Net Monthly Balance
+          </div>
           <div
-            className={`font-mono tabular-nums text-2xl font-semibold mt-1.5 ${
-              netMonthlyBalance >= 0 ? 'text-[#0F766E]' : 'text-[#BE123C]'
+            className={`font-mono tabular-nums text-base sm:text-xl font-semibold mt-1 tracking-tight truncate ${
+              netMonthlyBalance >= 0
+                ? 'text-[#0F766E] dark:text-[#2DD4BF]'
+                : 'text-[#BE123C] dark:text-[#FB7185]'
             }`}
           >
             {formatCurrency(netMonthlyBalance, true)}
           </div>
-          <div className="text-xs mt-2">
-            <span className={netMonthlyBalance >= 0 ? 'text-[#0F766E] font-medium' : 'text-[#BE123C] font-medium'}>
-              {netMonthlyBalance >= 0 ? 'Monthly surplus' : 'Monthly deficit'}
+          <div className="text-[11px] sm:text-xs mt-1.5 truncate">
+            <span
+              className={
+                netMonthlyBalance >= 0
+                  ? 'text-[#0F766E] dark:text-[#2DD4BF] font-medium'
+                  : 'text-[#BE123C] dark:text-[#FB7185] font-medium'
+              }
+            >
+              {netMonthlyBalance >= 0 ? 'Surplus' : 'Deficit'}
             </span>
-            <span className="text-[#4B6780]">
+            <span className="text-[#4B6780] dark:text-[#93B4CF]">
               <span aria-hidden="true"> · </span>
               <span className="font-mono tabular-nums">
-                {formatCurrency(Math.max(0, netMonthlyBalance) / 30)}/day free
+                {formatCurrency(Math.max(0, netMonthlyBalance) / 30)}/day
               </span>
             </span>
           </div>
         </div>
 
-        <div className="bg-white border border-[#D4E7F7] rounded-xl p-5">
-          <div className="text-xs font-medium text-[#4B6780]">Savings Goals Funded</div>
-          <div className="font-mono tabular-nums text-2xl font-semibold text-[#0F2537] mt-1.5">
+        <div className="bg-white dark:bg-[#112233] border border-[#D4E7F7] dark:border-[#1E3750] rounded-xl p-4 sm:p-5 min-w-0">
+          <div className="text-xs font-medium text-[#4B6780] dark:text-[#93B4CF] truncate">
+            Savings Funded
+          </div>
+          <div className="font-mono tabular-nums text-base sm:text-xl font-semibold text-[#0F2537] dark:text-[#EDF6FF] mt-1 tracking-tight truncate">
             {formatCurrency(totalSavedAmount)}
           </div>
-          <div className="text-xs text-[#4B6780] mt-2">
+          <div className="text-[11px] sm:text-xs text-[#4B6780] dark:text-[#93B4CF] mt-1.5 truncate">
             {savingsGoals.length > 0 ? (
               <>
                 <span className="font-mono tabular-nums">{formatPercent(overallGoalProgress)}</span> of{' '}
                 <span className="font-mono tabular-nums">{formatCurrency(totalGoalTarget)}</span>
               </>
             ) : (
-              'No savings goals set yet'
+              'No savings goals set'
             )}
           </div>
         </div>
       </div>
 
-      {/* Main 2-Column Split: Focal Circular Pie Chart + Quick Calculator & Category Targets */}
-      <div className="grid grid-cols-1 xl:grid-cols-[1.25fr_0.95fr] gap-6 items-stretch">
+      {/* Monthly Income vs. Expenses Bar Chart Summary (Recharts) */}
+      <IncomeVsExpensesChart
+        totalMonthlyIncome={totalMonthlyIncome}
+        totalMonthlyExpenses={totalMonthlyExpenses}
+        isDark={isDark}
+        onAddIncome={onOpenAddIncome}
+        onAddExpense={() => onOpenAddExpense()}
+      />
+
+      {/* Main 2-Column Split: Focal Donut Chart + Quick Calculator & Category Targets */}
+      <div className="grid grid-cols-1 min-[900px]:grid-cols-[1.2fr_1fr] xl:grid-cols-[1.25fr_0.95fr] gap-5 sm:gap-6 items-stretch">
         <CircularPieChart
           mode={pieMode}
           onModeChange={setPieMode}
@@ -239,25 +329,26 @@ export function OverviewView({
           selectedSliceId={selectedSliceId}
           onSelectSlice={setSelectedSliceId}
           onInspectCategory={(catId) => onNavigate('expenses', catId)}
+          onClearCategory={(catId, catName) => onClearCategory(catId, catName)}
           onAddFirstExpense={() => onOpenAddExpense()}
         />
 
-        <section className="bg-white border border-[#D4E7F7] rounded-xl p-6 flex flex-col justify-between gap-6">
+        <section className="bg-white dark:bg-[#112233] border border-[#D4E7F7] dark:border-[#1E3750] rounded-xl p-5 sm:p-6 flex flex-col justify-between gap-5">
           {/* Quick Expense Input Calculator */}
           <div>
-            <div className="flex items-center justify-between gap-2 pb-4 border-b border-[#E6F1FA]">
+            <div className="flex items-center justify-between gap-2 pb-4 border-b border-[#E6F1FA] dark:border-[#1A3046]">
               <div>
-                <h2 className="text-lg font-semibold text-[#0F2537] tracking-tight">
+                <h2 className="text-base sm:text-lg font-semibold text-[#0F2537] dark:text-[#EDF6FF] tracking-tight">
                   Quick Expense Entry
                 </h2>
-                <p className="text-xs text-[#4B6780] mt-0.5">
+                <p className="text-xs text-[#4B6780] dark:text-[#93B4CF] mt-0.5">
                   Log an item to recalculate your donut chart immediately.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => onNavigate('expenses')}
-                className="text-xs font-medium text-[#0284C7] hover:text-[#0369A1] whitespace-nowrap shrink-0 cursor-pointer"
+                className="min-h-[36px] px-2 text-xs font-medium text-[#0284C7] dark:text-[#38BDF8] hover:text-[#0369A1] dark:hover:text-[#7DD3FC] whitespace-nowrap shrink-0 cursor-pointer"
               >
                 Full ledger
               </button>
@@ -271,26 +362,27 @@ export function OverviewView({
                   placeholder="e.g., Campus lunch, Electric bill, Steam sale"
                   value={quickTitle}
                   onChange={(e) => setQuickTitle(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-[#F8FBFE] border border-[#CBE2F5] rounded-lg text-[#0F2537] placeholder:text-[#7E9BB5] focus:bg-white focus:border-[#0284C7] focus:outline-none"
+                  className="w-full min-h-[42px] px-3 py-2 text-sm bg-[#F8FBFE] dark:bg-[#0B1825] border border-[#CBE2F5] dark:border-[#1E3750] rounded-lg text-[#0F2537] dark:text-[#EDF6FF] placeholder:text-[#7E9BB5] dark:placeholder:text-[#5E7E9B] focus:bg-white dark:focus:bg-[#0D1E2E] focus:border-[#0284C7] dark:focus:border-[#38BDF8] focus:outline-none"
                 />
                 <input
                   type="number"
                   step="0.01"
                   min="0"
+                  inputMode="decimal"
                   aria-label="Expense amount in USD"
                   placeholder="$0.00"
                   value={quickAmount}
                   onChange={(e) => setQuickAmount(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-[#F8FBFE] border border-[#CBE2F5] rounded-lg text-[#0F2537] font-mono tabular-nums placeholder:text-[#7E9BB5] focus:bg-white focus:border-[#0284C7] focus:outline-none"
+                  className="w-full min-h-[42px] px-3 py-2 text-sm bg-[#F8FBFE] dark:bg-[#0B1825] border border-[#CBE2F5] dark:border-[#1E3750] rounded-lg text-[#0F2537] dark:text-[#EDF6FF] font-mono tabular-nums placeholder:text-[#7E9BB5] dark:placeholder:text-[#5E7E9B] focus:bg-white dark:focus:bg-[#0D1E2E] focus:border-[#0284C7] dark:focus:border-[#38BDF8] focus:outline-none"
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2.5">
+              <div className="grid grid-cols-2 sm:grid-cols-[1fr_1fr_auto] gap-2.5">
                 <select
                   aria-label="Expense category"
                   value={quickCategoryId}
                   onChange={(e) => setQuickCategoryId(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-[#F8FBFE] border border-[#CBE2F5] rounded-lg text-[#0F2537] focus:bg-white focus:border-[#0284C7] focus:outline-none"
+                  className="w-full min-h-[42px] px-3 py-2 text-sm bg-[#F8FBFE] dark:bg-[#0B1825] border border-[#CBE2F5] dark:border-[#1E3750] rounded-lg text-[#0F2537] dark:text-[#EDF6FF] focus:bg-white dark:focus:bg-[#0D1E2E] focus:border-[#0284C7] dark:focus:border-[#38BDF8] focus:outline-none"
                 >
                   {categories.map((cat) => (
                     <option key={cat.id} value={cat.id}>
@@ -303,7 +395,7 @@ export function OverviewView({
                   aria-label="Expense frequency"
                   value={quickFrequency}
                   onChange={(e) => setQuickFrequency(e.target.value as Frequency)}
-                  className="w-full px-3 py-2 text-sm bg-[#F8FBFE] border border-[#CBE2F5] rounded-lg text-[#0F2537] focus:bg-white focus:border-[#0284C7] focus:outline-none"
+                  className="w-full min-h-[42px] px-3 py-2 text-sm bg-[#F8FBFE] dark:bg-[#0B1825] border border-[#CBE2F5] dark:border-[#1E3750] rounded-lg text-[#0F2537] dark:text-[#EDF6FF] focus:bg-white dark:focus:bg-[#0D1E2E] focus:border-[#0284C7] dark:focus:border-[#38BDF8] focus:outline-none"
                 >
                   <option value="monthly">Monthly</option>
                   <option value="weekly">Weekly</option>
@@ -314,7 +406,7 @@ export function OverviewView({
 
                 <button
                   type="submit"
-                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-[#0284C7] hover:bg-[#0369A1] rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                  className="col-span-2 sm:col-span-1 min-h-[42px] inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-[#0284C7] hover:bg-[#0369A1] dark:bg-[#0EA5E9] dark:text-[#08131E] dark:hover:bg-[#38BDF8] rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
                   Add
@@ -322,7 +414,7 @@ export function OverviewView({
               </div>
 
               {quickError && (
-                <p role="alert" className="text-xs text-[#BE123C]">
+                <p role="alert" className="text-xs text-[#BE123C] dark:text-[#FB7185]">
                   {quickError}
                 </p>
               )}
@@ -330,20 +422,22 @@ export function OverviewView({
           </div>
 
           {/* Category Targets Progress */}
-          <div className="pt-5 border-t border-[#E6F1FA]">
-            <div className="flex items-center justify-between gap-2 mb-4">
-              <h3 className="text-sm font-semibold text-[#0F2537]">Category Monthly Limits</h3>
+          <div className="pt-4 border-t border-[#E6F1FA] dark:border-[#1A3046]">
+            <div className="flex items-center justify-between gap-2 mb-3.5">
+              <h3 className="text-sm font-semibold text-[#0F2537] dark:text-[#EDF6FF]">
+                Category Monthly Limits
+              </h3>
               <button
                 type="button"
                 onClick={() => onNavigate('categories')}
-                className="text-xs font-medium text-[#0284C7] hover:text-[#0369A1] whitespace-nowrap shrink-0 cursor-pointer"
+                className="min-h-[32px] px-1 text-xs font-medium text-[#0284C7] dark:text-[#38BDF8] hover:text-[#0369A1] dark:hover:text-[#7DD3FC] whitespace-nowrap shrink-0 cursor-pointer"
               >
                 Adjust limits
               </button>
             </div>
 
-            <div className="space-y-4">
-              {categoryStats.map(({ category, monthlyTotal }) => {
+            <div className="space-y-3.5">
+              {categoryStats.map(({ category, itemCount, monthlyTotal }) => {
                 const target = category.monthlyTarget;
                 const pct = target > 0 ? (monthlyTotal / target) * 100 : 0;
                 const clampedPct = Math.min(100, pct);
@@ -357,32 +451,32 @@ export function OverviewView({
                     : 'Within limit';
                 const statusClass =
                   pct > 100
-                    ? 'text-[#BE123C]'
+                    ? 'text-[#BE123C] dark:text-[#FB7185]'
                     : pct >= 85
-                    ? 'text-[#B45309]'
-                    : 'text-[#4B6780]';
+                    ? 'text-[#B45309] dark:text-[#FBBF24]'
+                    : 'text-[#4B6780] dark:text-[#93B4CF]';
 
                 return (
                   <div key={category.id}>
-                    <div className="flex items-baseline justify-between gap-2 text-sm">
+                    <div className="flex items-baseline justify-between gap-2 text-xs sm:text-sm">
                       <button
                         type="button"
                         onClick={() => onNavigate('expenses', category.id)}
-                        className="font-medium text-[#0F2537] hover:text-[#0284C7] transition-colors truncate text-left cursor-pointer"
+                        className="font-medium text-[#0F2537] dark:text-[#EDF6FF] hover:text-[#0284C7] dark:hover:text-[#38BDF8] transition-colors truncate min-w-0 flex-1 text-left cursor-pointer"
                       >
                         {category.name}
                       </button>
-                      <div className="flex items-baseline gap-2 shrink-0">
-                        <span className="font-mono tabular-nums font-medium text-[#0F2537]">
+                      <div className="flex items-baseline gap-1.5 shrink-0">
+                        <span className="font-mono tabular-nums text-xs sm:text-sm font-medium text-[#0F2537] dark:text-[#EDF6FF]">
                           {formatCurrency(monthlyTotal)}
                         </span>
-                        <span className="font-mono tabular-nums text-xs text-[#6B87A1]">
+                        <span className="font-mono tabular-nums text-[11px] text-[#6B87A1] dark:text-[#7496B5]">
                           / {formatCurrency(target)}
                         </span>
                       </div>
                     </div>
 
-                    <div className="mt-1.5 h-2 w-full bg-[#EAF4FC] rounded-full overflow-hidden">
+                    <div className="mt-1.5 h-2 w-full bg-[#EAF4FC] dark:bg-[#193047] rounded-full overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all duration-200"
                         style={{
@@ -392,11 +486,49 @@ export function OverviewView({
                       />
                     </div>
 
-                    <div className="mt-1 flex items-center justify-between text-xs">
-                      <span className={statusClass}>{statusLabel}</span>
-                      <span className="font-mono tabular-nums text-[#6B87A1]">
-                        {target > 0 ? formatPercent(pct) : '—'}
+                    <div className="mt-1 flex items-center justify-between gap-2 text-xs">
+                      <span className={statusClass}>
+                        {statusLabel}
+                        {target > 0 ? (
+                          <span className="font-mono tabular-nums text-[#6B87A1] dark:text-[#7496B5]">
+                            {' · '}
+                            {formatPercent(pct)}
+                          </span>
+                        ) : null}
                       </span>
+
+                      {itemCount > 0 && (
+                        confirmClearCatId === category.id ? (
+                          <div className="inline-flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                onClearCategory(category.id, category.name);
+                                setConfirmClearCatId(null);
+                              }}
+                              className="text-[11px] font-semibold text-[#BE123C] dark:text-[#FB7185] hover:underline cursor-pointer"
+                            >
+                              Confirm clear
+                            </button>
+                            <span className="text-[#94B4CE] dark:text-[#456787]" aria-hidden="true">/</span>
+                            <button
+                              type="button"
+                              onClick={() => setConfirmClearCatId(null)}
+                              className="text-[11px] text-[#4B6780] dark:text-[#93B4CF] hover:text-[#0F2537] dark:hover:text-white cursor-pointer"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setConfirmClearCatId(category.id)}
+                            className="text-[11px] font-medium text-[#6B87A1] dark:text-[#7496B5] hover:text-[#BE123C] dark:hover:text-[#FB7185] transition-colors cursor-pointer shrink-0"
+                          >
+                            Clear {category.name}
+                          </button>
+                        )
+                      )}
                     </div>
                   </div>
                 );
@@ -407,21 +539,23 @@ export function OverviewView({
       </div>
 
       {/* Bottom 2-Column Split: Income Sources Summary + Savings Goals Snapshot */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+      <div className="grid grid-cols-1 landscape:grid-cols-2 lg:grid-cols-2 gap-5 sm:gap-6 items-stretch">
         {/* Income Sources Snapshot */}
-        <section className="bg-white border border-[#D4E7F7] rounded-xl p-6 flex flex-col justify-between">
+        <section className="bg-white dark:bg-[#112233] border border-[#D4E7F7] dark:border-[#1E3750] rounded-xl p-5 sm:p-6 flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between gap-3 pb-4 border-b border-[#E6F1FA]">
+            <div className="flex items-center justify-between gap-3 pb-4 border-b border-[#E6F1FA] dark:border-[#1A3046]">
               <div>
-                <h2 className="text-base font-semibold text-[#0F2537]">Income Sources</h2>
-                <p className="text-xs text-[#4B6780] mt-0.5">
+                <h2 className="text-base font-semibold text-[#0F2537] dark:text-[#EDF6FF]">
+                  Income Sources
+                </h2>
+                <p className="text-xs text-[#4B6780] dark:text-[#93B4CF] mt-0.5">
                   Normalized to monthly income for cash-flow accuracy.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => onNavigate('income')}
-                className="inline-flex items-center gap-1 text-xs font-medium text-[#0284C7] hover:text-[#0369A1] whitespace-nowrap shrink-0 cursor-pointer"
+                className="min-h-[36px] inline-flex items-center gap-1 text-xs font-medium text-[#0284C7] dark:text-[#38BDF8] hover:text-[#0369A1] dark:hover:text-[#7DD3FC] whitespace-nowrap shrink-0 cursor-pointer"
               >
                 Manage
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -430,18 +564,20 @@ export function OverviewView({
 
             {incomes.length === 0 ? (
               <div className="py-10 text-center">
-                <p className="text-sm text-[#4B6780]">No income sources added yet.</p>
+                <p className="text-sm text-[#4B6780] dark:text-[#93B4CF]">
+                  No income sources added yet.
+                </p>
                 <button
                   type="button"
                   onClick={onOpenAddIncome}
-                  className="mt-3 inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-[#0C4A6E] bg-[#E0F2FE] hover:bg-[#BAE6FD] rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                  className="mt-3 min-h-[40px] inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-[#0C4A6E] dark:text-[#7DD3FC] bg-[#E0F2FE] dark:bg-[#163049] hover:bg-[#BAE6FD] dark:hover:bg-[#1E3F5E] rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   Add Income Source
                 </button>
               </div>
             ) : (
-              <div className="divide-y divide-[#EAF3FB] mt-2">
+              <div className="divide-y divide-[#EAF3FB] dark:divide-[#1A3046] mt-2">
                 {incomes.slice(0, 4).map((item) => {
                   const monthlyVal = toMonthlyAmount(item.amount, item.frequency);
                   return (
@@ -452,10 +588,10 @@ export function OverviewView({
                       }`}
                     >
                       <div className="min-w-0">
-                        <div className="text-sm font-medium text-[#0F2537] truncate">
+                        <div className="text-sm font-medium text-[#0F2537] dark:text-[#EDF6FF] truncate">
                           {item.title}
                         </div>
-                        <div className="text-xs text-[#4B6780] mt-0.5">
+                        <div className="text-xs text-[#4B6780] dark:text-[#93B4CF] mt-0.5">
                           {INCOME_SOURCE_LABELS[item.sourceType]}
                           <span aria-hidden="true"> · </span>
                           <span className="font-mono tabular-nums">
@@ -470,10 +606,10 @@ export function OverviewView({
                         </div>
                       </div>
                       <div className="text-right shrink-0">
-                        <div className="font-mono tabular-nums text-sm font-semibold text-[#0F2537]">
+                        <div className="font-mono tabular-nums text-sm font-semibold text-[#0F2537] dark:text-[#EDF6FF]">
                           {formatCurrency(monthlyVal)}
                         </div>
-                        <div className="text-[11px] text-[#6B87A1]">per month</div>
+                        <div className="text-[11px] text-[#6B87A1] dark:text-[#7496B5]">per month</div>
                       </div>
                     </div>
                   );
@@ -482,28 +618,30 @@ export function OverviewView({
             )}
           </div>
 
-          <div className="pt-4 mt-2 border-t border-[#E6F1FA] flex items-center justify-between text-xs text-[#4B6780]">
+          <div className="pt-4 mt-2 border-t border-[#E6F1FA] dark:border-[#1A3046] flex items-center justify-between text-xs text-[#4B6780] dark:text-[#93B4CF]">
             <span>Active monthly total</span>
-            <span className="font-mono tabular-nums text-sm font-semibold text-[#0C4A6E]">
+            <span className="font-mono tabular-nums text-sm font-semibold text-[#0C4A6E] dark:text-[#38BDF8]">
               {formatCurrency(totalMonthlyIncome)}/mo
             </span>
           </div>
         </section>
 
         {/* Savings Goals Snapshot */}
-        <section className="bg-white border border-[#D4E7F7] rounded-xl p-6 flex flex-col justify-between">
+        <section className="bg-white dark:bg-[#112233] border border-[#D4E7F7] dark:border-[#1E3750] rounded-xl p-5 sm:p-6 flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between gap-3 pb-4 border-b border-[#E6F1FA]">
+            <div className="flex items-center justify-between gap-3 pb-4 border-b border-[#E6F1FA] dark:border-[#1A3046]">
               <div>
-                <h2 className="text-base font-semibold text-[#0F2537]">Savings Goals</h2>
-                <p className="text-xs text-[#4B6780] mt-0.5">
+                <h2 className="text-base font-semibold text-[#0F2537] dark:text-[#EDF6FF]">
+                  Savings Goals
+                </h2>
+                <p className="text-xs text-[#4B6780] dark:text-[#93B4CF] mt-0.5">
                   Allocate extra funds directly toward your student milestones.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => onNavigate('goals')}
-                className="inline-flex items-center gap-1 text-xs font-medium text-[#0284C7] hover:text-[#0369A1] whitespace-nowrap shrink-0 cursor-pointer"
+                className="min-h-[36px] inline-flex items-center gap-1 text-xs font-medium text-[#0284C7] dark:text-[#38BDF8] hover:text-[#0369A1] dark:hover:text-[#7DD3FC] whitespace-nowrap shrink-0 cursor-pointer"
               >
                 All goals
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -512,13 +650,13 @@ export function OverviewView({
 
             {savingsGoals.length === 0 ? (
               <div className="py-10 text-center">
-                <p className="text-sm text-[#4B6780]">
+                <p className="text-sm text-[#4B6780] dark:text-[#93B4CF]">
                   Set a goal like a New Laptop or Vacation to track your savings progress.
                 </p>
                 <button
                   type="button"
                   onClick={onOpenAddGoal}
-                  className="mt-3 inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-[#0C4A6E] bg-[#E0F2FE] hover:bg-[#BAE6FD] rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                  className="mt-3 min-h-[40px] inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-[#0C4A6E] dark:text-[#7DD3FC] bg-[#E0F2FE] dark:bg-[#163049] hover:bg-[#BAE6FD] dark:hover:bg-[#1E3F5E] rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   Create First Goal
@@ -537,10 +675,10 @@ export function OverviewView({
                     <div key={goal.id} className="space-y-1.5">
                       <div className="flex items-center justify-between gap-2">
                         <div className="min-w-0">
-                          <span className="text-sm font-medium text-[#0F2537] truncate block">
+                          <span className="text-sm font-medium text-[#0F2537] dark:text-[#EDF6FF] truncate block">
                             {goal.name}
                           </span>
-                          <span className="text-xs text-[#4B6780] font-mono tabular-nums">
+                          <span className="text-xs text-[#4B6780] dark:text-[#93B4CF] font-mono tabular-nums">
                             {formatCurrency(goal.savedAmount)} of {formatCurrency(goal.targetAmount)}
                             {' · '}
                             {Math.round(pct)}%
@@ -552,30 +690,32 @@ export function OverviewView({
                               <button
                                 type="button"
                                 onClick={() => onAllocateGoal(goal.id, 25)}
-                                className="px-2.5 py-1 text-xs font-mono font-medium text-[#0369A1] bg-[#EBF5FD] hover:bg-[#D5ECFC] rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                                className="min-h-[34px] px-2.5 py-1 text-xs font-mono font-medium text-[#0369A1] dark:text-[#7DD3FC] bg-[#EBF5FD] dark:bg-[#163049] hover:bg-[#D5ECFC] dark:hover:bg-[#1E3F5E] rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer"
                               >
                                 +$25
                               </button>
                               <button
                                 type="button"
                                 onClick={() => onAllocateGoal(goal.id, 50)}
-                                className="px-2.5 py-1 text-xs font-mono font-medium text-[#0369A1] bg-[#EBF5FD] hover:bg-[#D5ECFC] rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                                className="min-h-[34px] px-2.5 py-1 text-xs font-mono font-medium text-[#0369A1] dark:text-[#7DD3FC] bg-[#EBF5FD] dark:bg-[#163049] hover:bg-[#D5ECFC] dark:hover:bg-[#1E3F5E] rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer"
                               >
                                 +$50
                               </button>
                             </>
                           ) : (
-                            <span className="text-xs font-medium text-[#0F766E]">Goal reached</span>
+                            <span className="text-xs font-medium text-[#0F766E] dark:text-[#2DD4BF]">
+                              Goal reached
+                            </span>
                           )}
                         </div>
                       </div>
 
-                      <div className="h-2 w-full bg-[#EAF4FC] rounded-full overflow-hidden">
+                      <div className="h-2 w-full bg-[#EAF4FC] dark:bg-[#193047] rounded-full overflow-hidden">
                         <div
                           className="h-full rounded-full transition-all duration-200"
                           style={{
                             width: `${pct}%`,
-                            backgroundColor: isComplete ? '#0F766E' : goal.color,
+                            backgroundColor: isComplete ? '#14B8A6' : goal.color,
                           }}
                         />
                       </div>
@@ -586,9 +726,9 @@ export function OverviewView({
             )}
           </div>
 
-          <div className="pt-4 mt-4 border-t border-[#E6F1FA] flex items-center justify-between text-xs text-[#4B6780]">
+          <div className="pt-4 mt-4 border-t border-[#E6F1FA] dark:border-[#1A3046] flex items-center justify-between text-xs text-[#4B6780] dark:text-[#93B4CF]">
             <span>Planned monthly contribution</span>
-            <span className="font-mono tabular-nums text-sm font-semibold text-[#0C4A6E]">
+            <span className="font-mono tabular-nums text-sm font-semibold text-[#0C4A6E] dark:text-[#38BDF8]">
               {formatCurrency(totalGoalMonthlyAllocation)}/mo
             </span>
           </div>
