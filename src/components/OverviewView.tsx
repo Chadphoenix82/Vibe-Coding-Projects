@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ArrowRight, Plus, RotateCcw, Trash2 } from 'lucide-react';
+import { ArrowRight, Plus, RotateCcw, ScanLine, Trash2 } from 'lucide-react';
 import {
   BudgetCategory,
   ExpenseItem,
@@ -29,7 +29,10 @@ interface OverviewViewProps {
   onClearCategory: (categoryId: string, categoryName: string) => void;
   onClearAllData: () => void;
   onLoadSampleData: () => void;
-  onNavigate: (tab: 'expenses' | 'income' | 'goals' | 'categories', categoryFilter?: string) => void;
+  onNavigate: (
+    tab: 'expenses' | 'income' | 'goals' | 'categories' | 'scan',
+    categoryFilter?: string
+  ) => void;
 }
 
 export function OverviewView({
@@ -172,57 +175,68 @@ export function OverviewView({
 
   return (
     <div className="space-y-5 sm:space-y-6">
-      {/* Quick Overview Utility Strip: Clear All Data / Load Sample */}
+      {/* Quick Overview Utility Strip: Scan Document / Clear All Data / Load Sample */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs sm:text-sm text-[#4B6780] dark:text-[#93B4CF]">
           All figures are calculated monthly and stored locally on this device.
         </p>
 
-        {hasAnyData ? (
-          confirmClearAll ? (
-            <div className="inline-flex items-center gap-2 text-xs">
-              <span className="text-[#4B6780] dark:text-[#93B4CF] hidden sm:inline">
-                Reset all expenses, income &amp; goals?
-              </span>
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => onNavigate('scan')}
+            className="min-h-[36px] inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#0C4A6E] dark:text-[#7DD3FC] bg-white dark:bg-[#112233] hover:bg-[#EBF5FD] dark:hover:bg-[#163049] border border-[#CBE2F5] dark:border-[#1E3750] rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+          >
+            <ScanLine className="w-3.5 h-3.5" aria-hidden="true" />
+            Scan Document
+          </button>
+
+          {hasAnyData ? (
+            confirmClearAll ? (
+              <div className="inline-flex items-center gap-2 text-xs">
+                <span className="text-[#4B6780] dark:text-[#93B4CF] hidden sm:inline">
+                  Reset all expenses, income &amp; goals?
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClearAllData();
+                    setConfirmClearAll(false);
+                    setSelectedSliceId(null);
+                  }}
+                  className="min-h-[36px] px-3 py-1.5 font-semibold text-white bg-[#BE123C] hover:bg-[#9F1239] rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                >
+                  Confirm Clear All
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmClearAll(false)}
+                  className="min-h-[36px] px-3 py-1.5 font-medium text-[#4B6780] dark:text-[#93B4CF] bg-white dark:bg-[#112233] border border-[#D4E7F7] dark:border-[#1E3750] hover:bg-[#EBF5FD] dark:hover:bg-[#163049] rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
               <button
                 type="button"
-                onClick={() => {
-                  onClearAllData();
-                  setConfirmClearAll(false);
-                  setSelectedSliceId(null);
-                }}
-                className="min-h-[36px] px-3 py-1.5 font-semibold text-white bg-[#BE123C] hover:bg-[#9F1239] rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                onClick={() => setConfirmClearAll(true)}
+                className="min-h-[36px] inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#BE123C] dark:text-[#FB7185] bg-white dark:bg-[#112233] hover:bg-[#FFF1F2] dark:hover:bg-[#3B1020] border border-[#FECDD3] dark:border-[#5C1D2E] rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
               >
-                Confirm Clear All
+                <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+                Clear All Data
               </button>
-              <button
-                type="button"
-                onClick={() => setConfirmClearAll(false)}
-                className="min-h-[36px] px-3 py-1.5 font-medium text-[#4B6780] dark:text-[#93B4CF] bg-white dark:bg-[#112233] border border-[#D4E7F7] dark:border-[#1E3750] hover:bg-[#EBF5FD] dark:hover:bg-[#163049] rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-              >
-                Cancel
-              </button>
-            </div>
+            )
           ) : (
             <button
               type="button"
-              onClick={() => setConfirmClearAll(true)}
-              className="min-h-[36px] inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#BE123C] dark:text-[#FB7185] bg-white dark:bg-[#112233] hover:bg-[#FFF1F2] dark:hover:bg-[#3B1020] border border-[#FECDD3] dark:border-[#5C1D2E] rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              onClick={onLoadSampleData}
+              className="min-h-[36px] inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#0C4A6E] dark:text-[#7DD3FC] bg-white dark:bg-[#112233] hover:bg-[#EBF5FD] dark:hover:bg-[#163049] border border-[#CBE2F5] dark:border-[#1E3750] rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
             >
-              <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
-              Clear All Data
+              <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
+              Load Sample Data
             </button>
-          )
-        ) : (
-          <button
-            type="button"
-            onClick={onLoadSampleData}
-            className="min-h-[36px] inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#0C4A6E] dark:text-[#7DD3FC] bg-white dark:bg-[#112233] hover:bg-[#EBF5FD] dark:hover:bg-[#163049] border border-[#CBE2F5] dark:border-[#1E3750] rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-          >
-            <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
-            Load Sample Data
-          </button>
-        )}
+          )}
+        </div>
       </div>
 
       {/* 4-Column Monthly Summary KPI Strip (4-up on wide landscape & desktop, 2x2 on compact phones) */}

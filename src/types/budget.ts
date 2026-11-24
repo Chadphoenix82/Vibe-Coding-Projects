@@ -63,6 +63,30 @@ export interface BudgetStore {
   currency: string;
 }
 
+export interface ScannedFinancialItem {
+  id: string;
+  entryType: 'expense' | 'income';
+  title: string;
+  amount: number;
+  categoryId: string;
+  sourceType: IncomeSourceType;
+  frequency: Frequency;
+  date: string;
+  note?: string;
+  selected: boolean;
+}
+
+export interface ScanDocumentResponse {
+  fileName: string;
+  formatLabel: string;
+  metadataSummary?: string;
+  documentType: string;
+  currency: string;
+  summary: string;
+  warnings: string[];
+  items: ScannedFinancialItem[];
+}
+
 export interface FrequencyMeta {
   label: string;
   shortLabel: string;

@@ -234,6 +234,26 @@ export function useLocalBudget() {
     }
   }, []);
 
+  const importScannedEntries = useCallback(
+    (newExpenses: Omit<ExpenseItem, 'id'>[], newIncomes: Omit<IncomeItem, 'id'>[]) => {
+      if (newExpenses.length === 0 && newIncomes.length === 0) return;
+      const stampedExpenses: ExpenseItem[] = newExpenses.map((exp) => ({
+        ...exp,
+        id: generateId('exp'),
+      }));
+      const stampedIncomes: IncomeItem[] = newIncomes.map((inc) => ({
+        ...inc,
+        id: generateId('inc'),
+      }));
+      setStore((prev) => ({
+        ...prev,
+        expenses: [...stampedExpenses, ...prev.expenses],
+        incomes: [...stampedIncomes, ...prev.incomes],
+      }));
+    },
+    []
+  );
+
   return {
     store,
     storageError,
@@ -256,5 +276,6 @@ export function useLocalBudget() {
     clearAllEntries,
     loadSampleData,
     importJsonData,
+    importScannedEntries,
   };
 }

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import { Pencil, Plus, ScanLine, Search, Trash2 } from 'lucide-react';
 import {
   BudgetCategory,
   ExpenseItem,
@@ -19,6 +19,7 @@ interface ExpensesViewProps {
   onDeleteExpense: (id: string) => void;
   onClearCategory: (categoryId: string, categoryName: string) => void;
   onClearAllExpenses: () => void;
+  onOpenScanner: () => void;
 }
 
 type SortOption = 'monthly-desc' | 'monthly-asc' | 'date-desc' | 'name-asc';
@@ -33,6 +34,7 @@ export function ExpensesView({
   onDeleteExpense,
   onClearCategory,
   onClearAllExpenses,
+  onOpenScanner,
 }: ExpensesViewProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('monthly-desc');
@@ -180,6 +182,15 @@ export function ExpensesView({
                 </button>
               )
             )}
+
+            <button
+              type="button"
+              onClick={onOpenScanner}
+              className="min-h-[40px] inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-[#0C4A6E] dark:text-[#7DD3FC] bg-white dark:bg-[#112233] hover:bg-[#EBF5FD] dark:hover:bg-[#163049] border border-[#CBE2F5] dark:border-[#1E3750] rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+            >
+              <ScanLine className="w-3.5 h-3.5" aria-hidden="true" />
+              Scan Doc
+            </button>
 
             <button
               type="button"

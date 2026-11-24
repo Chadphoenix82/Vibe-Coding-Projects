@@ -10,6 +10,7 @@ import {
   Plus,
   ReceiptText,
   RotateCcw,
+  ScanLine,
   Sun,
   Trash2,
   Upload,
@@ -31,10 +32,11 @@ import { ExpensesView } from './components/ExpensesView';
 import { IncomeView } from './components/IncomeView';
 import { SavingsGoalsView } from './components/SavingsGoalsView';
 import { CategoriesView } from './components/CategoriesView';
+import { DocumentScannerView } from './components/DocumentScannerView';
 import { EntryModal, ModalState } from './components/EntryModal';
 import { PWAInstallButton } from './components/PWAInstallButton';
 
-type NavTab = 'overview' | 'expenses' | 'income' | 'goals' | 'categories';
+type NavTab = 'overview' | 'expenses' | 'income' | 'goals' | 'categories' | 'scan';
 
 const NAV_ITEMS: { id: NavTab; label: string; shortLabel: string; icon: typeof LayoutDashboard }[] = [
   { id: 'overview', label: 'Overview', shortLabel: 'Home', icon: LayoutDashboard },
@@ -42,7 +44,10 @@ const NAV_ITEMS: { id: NavTab; label: string; shortLabel: string; icon: typeof L
   { id: 'income', label: 'Income', shortLabel: 'Income', icon: Wallet },
   { id: 'goals', label: 'Savings Goals', shortLabel: 'Goals', icon: PiggyBank },
   { id: 'categories', label: 'Categories', shortLabel: 'Limits', icon: FolderKanban },
+  { id: 'scan', label: 'Scan Document', shortLabel: 'Scan', icon: ScanLine },
 ];
+
+const MOBILE_BOTTOM_NAV_ITEMS = NAV_ITEMS.filter((item) => item.id !== 'scan');
 
 const TAB_TITLES: Record<NavTab, string> = {
   overview: 'Overview',
@@ -50,6 +55,7 @@ const TAB_TITLES: Record<NavTab, string> = {
   income: 'Income',
   goals: 'Savings Goals',
   categories: 'Categories',
+  scan: 'Scan Document',
 };
 
 const THEME_OPTIONS: { value: ThemePreference; label: string; icon: typeof Sun }[] = [
@@ -81,6 +87,7 @@ export default function App() {
     clearAllEntries,
     loadSampleData,
     importJsonData,
+    importScannedEntries,
   } = useLocalBudget();
 
   const { preference: themePreference, isDark, setPreference: setThemePreference, toggleTheme } =
@@ -554,6 +561,20 @@ export default function App() {
 
             <button
               type="button"
+              onClick={() => handleNavigate('scan')}
+              aria-current={activeTab === 'scan' ? 'page' : undefined}
+              className={`min-h-[40px] max-lg:landscape:min-h-[34px] inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                activeTab === 'scan'
+                  ? 'bg-[#E0F2FE] dark:bg-[#13324D] text-[#0369A1] dark:text-[#7DD3FC] border-[#7DD3FC] dark:border-[#38BDF8]'
+                  : 'text-[#0C4A6E] dark:text-[#7DD3FC] bg-white dark:bg-[#112233] hover:bg-[#EBF5FD] dark:hover:bg-[#163049] border-[#CBE2F5] dark:border-[#1E3750]'
+              }`}
+            >
+              <ScanLine className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>Scan Doc</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => setModal({ type: 'income' })}
               className="hidden sm:inline-flex landscape:inline-flex min-h-[40px] max-lg:landscape:min-h-[34px] items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium text-[#0C4A6E] dark:text-[#7DD3FC] bg-white dark:bg-[#112233] hover:bg-[#EBF5FD] dark:hover:bg-[#163049] border border-[#CBE2F5] dark:border-[#1E3750] rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
             >
@@ -662,6 +683,7 @@ export default function App() {
                 clearAllExpenses();
                 showFeedback('Cleared all expenses.');
               }}
+              onOpenScanner={() => handleNavigate('scan')}
             />
           )}
 
@@ -723,6 +745,21 @@ export default function App() {
               }}
             />
           )}
+          {activeTab === 'scan' && (
+            <DocumentScannerView
+              categories={store.categories}
+              isOnline={isOnline}
+              onImportEntries={(expensesToAdd, incomesToAdd) => {
+                importScannedEntries(expensesToAdd, incomesToAdd);
+                const totalImported = expensesToAdd.length + incomesToAdd.length;
+                showFeedback(
+                  `Imported ${totalImported} scanned ${totalImported === 1 ? 'item' : 'items'} into your local budget.`
+                );
+              }}
+              onNavigateOverview={() => handleNavigate('overview')}
+              onNavigateExpenses={() => handleNavigate('expenses')}
+            />
+          )}
         </main>
       </div>
 
@@ -731,7 +768,7 @@ export default function App() {
         aria-label="Mobile navigation"
         className="hidden max-lg:portrait:grid grid-cols-5 fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#0D1C2B]/95 backdrop-blur-md border-t border-[#D4E7F7] dark:border-[#1E3750] safe-pb"
       >
-        {NAV_ITEMS.map((item) => {
+        {MOBILE_BOTTOM_NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
           return (
